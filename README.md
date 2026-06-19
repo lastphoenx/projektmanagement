@@ -113,3 +113,24 @@ python -c "import secrets; print('SESSION_SECRET=' + secrets.token_urlsafe(64))"
 ```bash
 cd backend && pytest -v
 ```
+
+## Produktion (CT 129)
+
+Vollständige Anleitung im `doku`-Repo: `pve2/vm/129-projektmanagement/`
+
+| Aufgabe | Befehl / Ort |
+|---------|----------------|
+| Deploy / Update | `./scripts/deploy.sh` |
+| DB-Backup | `./scripts/backup-db.sh` |
+| nginx | CT 108 → `pm.santinel.li.conf` |
+| 2FA | `2fa-einrichtung.md` |
+
+### Produktions-`.env` (hinter TLS)
+
+```env
+CORS_ORIGINS=https://pm.santinel.li
+COOKIE_SECURE=true
+```
+
+Dann: `docker compose restart api`
+
