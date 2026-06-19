@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Leer = same-origin; Next.js leitet /api/* an das Backend weiter (Docker/Prod).
+// Optional NEXT_PUBLIC_API_URL nur für lokales Dev ohne Proxy.
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 type FetchOptions = RequestInit & { json?: unknown };
 
