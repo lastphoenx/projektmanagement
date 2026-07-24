@@ -2,6 +2,8 @@
 
 Self-hosted Projektmanagement mit Python/FastAPI-Backend und Next.js-Frontend.
 
+**Foundation (Phase 1–3)** als Vorlage für neue Secure-Apps: [FOUNDATION.md](FOUNDATION.md) · `./scripts/scaffold-new-app.sh <slug>`
+
 ## Architektur
 
 ```
