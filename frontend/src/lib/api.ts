@@ -150,13 +150,39 @@ export type SecurityCatalogEntry = {
 
 export type SecurityCatalogState = {
   classification_catalog: SecurityCatalogEntry[];
+  table_defaults: {
+    model: string;
+    table: string;
+    default_classification: string;
+    description: string;
+    policy_source: string;
+  }[];
   field_registry_overrides: {
     model: string;
     field: string;
     classification: string;
+    table_default: string;
+    is_override: boolean;
     gdpr_personal: boolean;
   }[];
+  planning_step_fields: {
+    step_number: number | null;
+    label: string;
+    slug: string | null;
+    model: string;
+    field: string;
+    table: string;
+    table_default: string;
+    effective_classification: string;
+    has_field_override: boolean;
+    note?: string;
+  }[];
   catalog_version: string;
+  concept: {
+    level_1: string;
+    level_2: string;
+    level_3: string;
+  };
 };
 
 export const fetchHealth = () => apiFetch<HealthResponse>("/api/v1/health");

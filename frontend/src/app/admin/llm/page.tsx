@@ -111,7 +111,7 @@ export default function AdminLlmPage() {
                   id="baseUrl"
                   value={baseUrl}
                   onChange={(e) => setBaseUrl(e.target.value)}
-                  placeholder="http://192.168.131.60:11434"
+                  placeholder="http://127.0.0.1:11434"
                 />
               </div>
             )}
