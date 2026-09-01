@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Projektmanagement">
+  <defs>
+    <linearGradient id="pm-bg" x1="24" y1="12" x2="156" y2="168" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0d9488"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="pm-shine" x1="90" y1="0" x2="90" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="url(#pm-bg)"/>
+  <path d="M24 52c0-15.5 12.5-28 28-28h76c15.5 0 28 12.5 28 28v48H24V52z" fill="url(#pm-shine)"/>
+  <text
+    x="90"
+    y="118"
+    text-anchor="middle"
+    fill="#ffffff"
+    font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="58"
+    font-weight="700"
+    letter-spacing="-3"
+  >PM</text>
+</svg>
