@@ -94,7 +94,7 @@ export default function AdminSecurityPage() {
                       <th className="text-left p-2">Modell</th>
                       <th className="text-left p-2">Tabelle</th>
                       <th className="text-left p-2">Default-Klasse</th>
-                      <th className="text-left p-2">Beschreibung</th>
+                      <th className="text-left p-2">Quelle</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -103,7 +103,7 @@ export default function AdminSecurityPage() {
                         <td className="p-2 font-mono">{t.model}</td>
                         <td className="p-2 font-mono text-xs">{t.table}</td>
                         <td className="p-2 font-mono">{t.default_classification}</td>
-                        <td className="p-2 text-muted-foreground">{t.description}</td>
+                        <td className="p-2 text-muted-foreground text-xs">{t.policy_source}</td>
                       </tr>
                     ))}
                   </tbody>

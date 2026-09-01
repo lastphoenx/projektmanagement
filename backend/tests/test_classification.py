@@ -41,3 +41,22 @@ def test_field_registry_fallback_to_table_default():
 def test_gdpr_fields_for_user():
     fields = gdpr_fields_for_model("User")
     assert any(f.field == "encrypted_profile" for f in fields)
+
+
+def test_table_defaults_from_models():
+    from app.core.crypto.table_defaults import discover_table_classification_defaults
+    from app.core.db.session import Base
+    from app.models import PlanningArtifact, PlanningFramework, Project, Task, User
+
+    by_model = {row.model: row for row in discover_table_classification_defaults(Base)}
+
+    assert by_model["Project"].default_classification == DataClassification.INTERNAL.name
+    assert by_model["Task"].default_classification == DataClassification.INTERNAL.name
+    assert by_model["User"].default_classification == DataClassification.SECRET.name
+    assert by_model["PlanningFramework"].default_classification == DataClassification.CONFIDENTIAL.name
+    assert by_model["PlanningArtifact"].default_classification == DataClassification.CONFIDENTIAL.name
+
+    # Sanity: introspection finds the models we care about
+    for cls in (Project, User, Task, PlanningFramework, PlanningArtifact):
+        assert cls.__name__ in by_model
+
