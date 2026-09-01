@@ -14,16 +14,22 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
+  confirmBudgetBasis,
   fetchPlanning,
   fetchProjectByKey,
+  fetchPspAnalysis,
   generatePlanningArtifact,
   generateProjectIdea,
   savePlanningArtifact,
   saveProjectIdea,
   setPlanningArtifactStatus,
+  updateBudgetBasis,
   type PlanningState,
   type Project,
+  type PspAnalysis,
 } from "@/lib/api";
 import {
   PLANNING_FLOW_STEPS,
@@ -46,6 +52,10 @@ export default function PlanningPage() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [pspAnalysis, setPspAnalysis] = useState<PspAnalysis | null>(null);
+  const [budgetCeiling, setBudgetCeiling] = useState("");
+  const [budgetNotes, setBudgetNotes] = useState("");
+  const [budgetLoading, setBudgetLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!projectKey) return;
@@ -68,6 +78,20 @@ export default function PlanningPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (activeStep !== "psp" || !planning) {
+      setPspAnalysis(null);
+      return;
+    }
+    const ceiling = planning.budget_basis?.budget_ceiling_chf;
+    if (ceiling != null) setBudgetCeiling(String(ceiling));
+    setBudgetLoading(true);
+    fetchPspAnalysis(projectKey)
+      .then(setPspAnalysis)
+      .catch((err) => setError(err instanceof Error ? err.message : "PSP-Auswertung fehlgeschlagen"))
+      .finally(() => setBudgetLoading(false));
+  }, [activeStep, planning, projectKey]);
 
   const activeMeta = useMemo(
     () => PLANNING_FLOW_STEPS.find((s) => s.key === activeStep) ?? PLANNING_FLOW_STEPS[0],
@@ -149,10 +173,6 @@ export default function PlanningPage() {
     }
   }
 
-  const canGenerateKi =
-    activeStep === PLANNING_IDEA.key ||
-    ["zielplanung", "projektbeschrieb", "psp"].includes(activeStep);
-
   async function onStatusChange(status: "pending" | "draft" | "approved") {
     if (!planning || activeStep === PLANNING_IDEA.key) return;
     setSaving(true);
@@ -164,6 +184,46 @@ export default function PlanningPage() {
       setError(err instanceof Error ? err.message : "Status konnte nicht gesetzt werden");
     } finally {
       setSaving(false);
+    }
+  }
+
+  const canGenerateKi =
+    activeStep === PLANNING_IDEA.key ||
+    ["zielplanung", "projektbeschrieb", "psp"].includes(activeStep);
+
+  async function onSaveBudgetBasis() {
+    if (!planning) return;
+    setBudgetLoading(true);
+    setError(null);
+    try {
+      const ceiling = budgetCeiling.trim() ? parseFloat(budgetCeiling) : null;
+      const result = await updateBudgetBasis(projectKey, {
+        budget_ceiling_chf: ceiling,
+        notes: budgetNotes,
+        expected_revision: planning.revision,
+      });
+      setPlanning(result.planning);
+      setPspAnalysis(result.analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Budgetbasis konnte nicht gespeichert werden");
+    } finally {
+      setBudgetLoading(false);
+    }
+  }
+
+  async function onConfirmBudgetBasis() {
+    if (!planning) return;
+    setBudgetLoading(true);
+    setError(null);
+    try {
+      const updated = await confirmBudgetBasis(projectKey, planning.revision);
+      setPlanning(updated);
+      const analysis = await fetchPspAnalysis(projectKey);
+      setPspAnalysis(analysis);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Budgetbasis konnte nicht bestätigt werden");
+    } finally {
+      setBudgetLoading(false);
     }
   }
 
@@ -312,6 +372,91 @@ export default function PlanningPage() {
                 </div>
               </div>
             </div>
+
+            {activeStep === "psp" && (
+              <div className="mb-6 rounded-xl border border-border/70 bg-muted/20 p-4 space-y-4">
+                <h3 className="font-display text-base font-semibold">Budgetauswertung (Phase 5)</h3>
+                {budgetLoading && !pspAnalysis ? (
+                  <p className="text-sm text-muted-foreground">Auswertung läuft…</p>
+                ) : pspAnalysis ? (
+                  <>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Arbeitspakete</p>
+                        <p className="font-medium">{pspAnalysis.work_package_count}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Personentage</p>
+                        <p className="font-medium">{pspAnalysis.total_pt} PT</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Geschätzt gesamt</p>
+                        <p className="font-medium">
+                          CHF {pspAnalysis.estimated_total_chf.toLocaleString("de-CH")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Status</p>
+                        <p className="font-medium">{pspAnalysis.status}</p>
+                      </div>
+                    </div>
+                    {pspAnalysis.fits_ceiling === false && (
+                      <p className="text-sm text-amber-700">
+                        Budgetdeckel überschritten um CHF{" "}
+                        {pspAnalysis.deviation_chf?.toLocaleString("de-CH")} (
+                        {pspAnalysis.deviation_pct}%)
+                      </p>
+                    )}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="budgetCeiling">Budgetdeckel (CHF)</Label>
+                        <Input
+                          id="budgetCeiling"
+                          type="number"
+                          min={0}
+                          value={budgetCeiling}
+                          onChange={(e) => setBudgetCeiling(e.target.value)}
+                          placeholder="z. B. 120000"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="budgetNotes">Notizen</Label>
+                        <Input
+                          id="budgetNotes"
+                          value={budgetNotes}
+                          onChange={(e) => setBudgetNotes(e.target.value)}
+                          placeholder="Optional"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={budgetLoading}
+                        onClick={onSaveBudgetBasis}
+                      >
+                        Budgetbasis speichern
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={budgetLoading}
+                        onClick={onConfirmBudgetBasis}
+                      >
+                        Budgetbasis bestätigen
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    PSP-Tabelle mit AP-IDs und PT ausfüllen, dann erscheint die Auswertung.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" onClick={onSave} disabled={saving}>

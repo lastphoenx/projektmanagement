@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.admin import admin_router
 from app.api.health import router as health_router
 from app.api.planning import planning_router
 from app.api.routes import auth_router, projects_router
@@ -25,3 +26,4 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(planning_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")

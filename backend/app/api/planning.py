@@ -8,6 +8,8 @@ from app.core.db import get_db
 from app.core.llm.errors import LLMError
 from app.models import User
 from app.schemas import (
+    BudgetBasisConfirmRequest,
+    BudgetBasisUpdateRequest,
     GenerateArtifactRequest,
     GenerateIdeaRequest,
     PlanningStateResponse,
@@ -16,6 +18,7 @@ from app.schemas import (
     SetArtifactStatusRequest,
 )
 from app.services.planning_generation_service import generate_artifact, generate_project_idea
+from app.services.psp_budget_service import analyze_psp_budget, confirm_budget_basis, update_budget_basis
 from app.services.planning_service import (
     PlanningError,
     get_planning_state,
@@ -179,5 +182,61 @@ def planning_generate_artifact(
         db.commit()
         return result
     except (PlanningError, LLMError) as exc:
+        db.rollback()
+        raise _planning_http_error(exc) from exc
+
+
+@planning_router.get("/psp-analysis")
+def planning_psp_analysis(
+    project_key: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        return analyze_psp_budget(db, user, project)
+    except PlanningError as exc:
+        raise _planning_http_error(exc) from exc
+
+
+@planning_router.put("/budget-basis")
+def planning_budget_basis_update(
+    project_key: str,
+    body: BudgetBasisUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        result = update_budget_basis(
+            db,
+            user,
+            project,
+            budget_ceiling_chf=body.budget_ceiling_chf,
+            notes=body.notes,
+            expected_revision=body.expected_revision,
+        )
+        db.commit()
+        return result
+    except PlanningError as exc:
+        db.rollback()
+        raise _planning_http_error(exc) from exc
+
+
+@planning_router.post("/budget-basis/confirm", response_model=PlanningStateResponse)
+def planning_budget_basis_confirm(
+    project_key: str,
+    body: BudgetBasisConfirmRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        result = confirm_budget_basis(
+            db, user, project, expected_revision=body.expected_revision
+        )
+        db.commit()
+        return result
+    except PlanningError as exc:
         db.rollback()
         raise _planning_http_error(exc) from exc

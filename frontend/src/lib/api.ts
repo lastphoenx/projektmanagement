@@ -100,6 +100,65 @@ export type PlanningState = {
   completion: PlanningCompletion;
 };
 
+export type PspAnalysis = {
+  total_pt: number;
+  personal_chf: number;
+  sachkosten_chf: number;
+  reserve_chf: number;
+  estimated_total_chf: number;
+  role_lines: { role: string; pt: number; rate_chf: number; total_chf: number }[];
+  work_package_count: number;
+  status: string;
+  budget_ceiling_chf?: number | null;
+  deviation_chf?: number;
+  deviation_pct?: number;
+  fits_ceiling?: boolean;
+};
+
+export type AdminLlmProvider = {
+  id: string;
+  label: string;
+  is_local: boolean;
+  configured: boolean;
+  base_url: string | null;
+  models: string[];
+};
+
+export type AdminLlmState = {
+  providers: AdminLlmProvider[];
+  active: {
+    provider: string;
+    model: string;
+    base_url: string | null;
+    source: string;
+  };
+};
+
+export type SecurityCatalogEntry = {
+  level: number;
+  name: string;
+  label: string;
+  retention_days: number | null;
+  gdpr_relevant: boolean;
+  exportable: boolean;
+  erasure_strategy: string;
+  requires_master_key: boolean;
+  requires_user_key: boolean;
+  requires_anonymization_before_external_llm: boolean;
+  never_leaves_infrastructure: boolean;
+};
+
+export type SecurityCatalogState = {
+  classification_catalog: SecurityCatalogEntry[];
+  field_registry_overrides: {
+    model: string;
+    field: string;
+    classification: string;
+    gdpr_personal: boolean;
+  }[];
+  catalog_version: string;
+};
+
 export const fetchHealth = () => apiFetch<HealthResponse>("/api/v1/health");
 export const fetchMe = () => apiFetch<User>("/api/v1/auth/me");
 export const login = (email: string, password: string) =>
@@ -124,6 +183,8 @@ export const createProject = (data: {
     method: "POST",
     json: data,
   });
+export const deleteProject = (id: string) =>
+  apiFetch<void>(`/api/v1/projects/${id}`, { method: "DELETE" });
 export const fetchPlanning = (projectKey: string) =>
   apiFetch<PlanningState>(
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning`
@@ -170,6 +231,37 @@ export const generatePlanningArtifact = (
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/artifacts/${slug}`,
     { method: "POST", json: { expected_revision: expectedRevision } }
   );
+export const fetchPspAnalysis = (projectKey: string) =>
+  apiFetch<PspAnalysis>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/psp-analysis`
+  );
+export const updateBudgetBasis = (
+  projectKey: string,
+  data: { budget_ceiling_chf: number | null; notes: string; expected_revision: number }
+) =>
+  apiFetch<{ analysis: PspAnalysis; planning: PlanningState }>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/budget-basis`,
+    { method: "PUT", json: data }
+  );
+export const confirmBudgetBasis = (projectKey: string, expectedRevision: number) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/budget-basis/confirm`,
+    { method: "POST", json: { expected_revision: expectedRevision } }
+  );
+export const fetchAdminLlm = () => apiFetch<AdminLlmState>("/api/v1/admin/llm");
+export const saveAdminLlm = (data: {
+  provider: string;
+  model: string;
+  base_url?: string;
+  api_key?: string;
+}) => apiFetch<AdminLlmState>("/api/v1/admin/llm", { method: "PUT", json: data });
+export const testAdminLlm = (data: { provider: string; model: string; base_url?: string }) =>
+  apiFetch<{ ok: boolean; message: string }>("/api/v1/admin/llm/test", {
+    method: "POST",
+    json: data,
+  });
+export const fetchAdminSecurityCatalog = () =>
+  apiFetch<SecurityCatalogState>("/api/v1/admin/security/catalog");
 export const fetchTasks = (projectId: string) =>
   apiFetch<Task[]>(`/api/v1/projects/${projectId}/tasks`);
 export const createTask = (projectId: string, title: string, body?: string) =>
