@@ -19,6 +19,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Projektmanagement",
   description: "Self-hosted Projektmanagement",
+  applicationName: "Projektmanagement",
 };
 
 export default function RootLayout({
