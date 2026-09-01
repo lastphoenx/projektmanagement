@@ -38,6 +38,7 @@ from app.services.project_service import (
     ProjectError,
     create_project,
     delete_project,
+    get_project_by_key,
     get_project_for_user,
     list_projects,
     lock_project,
@@ -202,7 +203,9 @@ def projects_create(
         result = create_project(
             db,
             user,
+            key=body.key,
             name=body.name,
+            project_type=body.project_type,
             description=body.description,
             classification=body.classification,
         )
@@ -210,7 +213,23 @@ def projects_create(
         return result
     except ProjectError as exc:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message) from exc
+        code = status.HTTP_400_BAD_REQUEST
+        if exc.code == "key_taken":
+            code = status.HTTP_409_CONFLICT
+        raise HTTPException(status_code=code, detail=exc.message) from exc
+
+
+@projects_router.get("/by-key/{project_key}", response_model=ProjectResponse)
+def projects_get_by_key(
+    project_key: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return get_project_by_key(db, user, project_key)
+    except ProjectError as exc:
+        code = status.HTTP_403_FORBIDDEN if exc.code == "forbidden" else status.HTTP_404_NOT_FOUND
+        raise HTTPException(status_code=code, detail=exc.message) from exc
 
 
 @projects_router.get("/{project_id}", response_model=ProjectResponse)

@@ -41,7 +41,9 @@ class LoginResponse(BaseModel):
 
 
 class ProjectCreateRequest(BaseModel):
+    key: str = Field(min_length=2, max_length=8, pattern=r"^[A-Za-z][A-Za-z0-9]{1,7}$")
     name: str = Field(min_length=1, max_length=256)
+    project_type: str = Field(default="other")
     description: str | None = Field(default=None, max_length=4096)
     classification: int = Field(default=1, ge=0, le=3)
 
@@ -54,6 +56,8 @@ class ProjectUpdateRequest(BaseModel):
 
 class ProjectResponse(BaseModel):
     id: str
+    key: str
+    project_type: str
     name: str
     description: str | None
     classification: int
@@ -102,3 +106,53 @@ class MemberResponse(BaseModel):
     user_id: str
     role: str
     created_at: str
+
+
+class PlanningArtifactResponse(BaseModel):
+    slug: str
+    status: str
+    content: str
+    version: int
+    generated_at: str | None
+    has_content: bool
+
+
+class PlanningCompletionResponse(BaseModel):
+    has_project_idea: bool
+    filled_count: int
+    total_count: int
+    artifact_filled: int
+    artifact_total: int
+    is_complete: bool
+
+
+class PlanningStateResponse(BaseModel):
+    project_key: str
+    revision: int
+    project_idea: str
+    budget_basis: dict
+    artifacts: list[PlanningArtifactResponse]
+    completion: PlanningCompletionResponse
+
+
+class SaveProjectIdeaRequest(BaseModel):
+    idea: str = Field(default="", max_length=65536)
+    expected_revision: int = Field(ge=1)
+
+
+class SaveArtifactRequest(BaseModel):
+    content: str = Field(default="", max_length=131072)
+    expected_version: int = Field(ge=0)
+
+
+class SetArtifactStatusRequest(BaseModel):
+    status: Literal["pending", "draft", "approved"]
+
+
+class GenerateIdeaRequest(BaseModel):
+    seed: str | None = Field(default=None, max_length=8192)
+    expected_revision: int = Field(ge=1)
+
+
+class GenerateArtifactRequest(BaseModel):
+    expected_revision: int = Field(ge=1)

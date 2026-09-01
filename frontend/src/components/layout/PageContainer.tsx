@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 import { LAYOUT_MAX_WIDTH_CLASS, LAYOUT_SHELL_CLASS } from "@/lib/layout-shell";
 
-export type PageContainerWidth = "default" | "medium" | "narrow";
+export type PageContainerWidth = "default" | "medium" | "narrow" | "wide";
 
 const WIDTH_CLASSES: Record<PageContainerWidth, string> = {
   default: LAYOUT_MAX_WIDTH_CLASS,
   medium: "max-w-4xl",
   narrow: "max-w-3xl",
+  wide: "max-w-7xl",
 };
 
 export function LayoutShell({

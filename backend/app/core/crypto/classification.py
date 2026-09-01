@@ -17,6 +17,18 @@ class DataClassification(IntEnum):
     def requires_user_key(self) -> bool:
         return self == DataClassification.SECRET
 
+    @property
+    def requires_anonymization_before_external_llm(self) -> bool:
+        return self in (
+            DataClassification.INTERNAL,
+            DataClassification.CONFIDENTIAL,
+            DataClassification.SECRET,
+        )
+
+    @property
+    def never_leaves_infrastructure(self) -> bool:
+        return self == DataClassification.SECRET
+
 
 def classification_label(value: int) -> str:
     return DataClassification(value).name

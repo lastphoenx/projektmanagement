@@ -12,6 +12,12 @@ from app.core.locking import LockError, acquire_lock, release_lock, require_lock
 from app.models import Project, ProjectMember, User
 from app.services.audit import log_event
 from app.services.member_service import add_project_owner
+from app.services.planning_service import (
+    ensure_planning_framework,
+    normalize_project_key,
+    validate_project_key,
+    validate_project_type,
+)
 
 
 class ProjectError(Exception):
@@ -24,6 +30,8 @@ class ProjectError(Exception):
 def _decrypt_project(project: Project) -> dict:
     return {
         "id": str(project.id),
+        "key": project.key,
+        "project_type": project.project_type,
         "name": decrypt_text_master(project.name_encrypted),
         "description": (
             decrypt_text_master(project.description_encrypted)
@@ -65,17 +73,61 @@ def get_project_for_user(db: Session, user: User, project_id: uuid.UUID) -> dict
     return _decrypt_project(project)
 
 
+def get_project_by_key(db: Session, user: User, key: str) -> dict:
+    normalized = normalize_project_key(key)
+    project = (
+        db.query(Project)
+        .filter(Project.tenant_id == user.tenant_id, Project.key == normalized)
+        .first()
+    )
+    if not project:
+        raise ProjectError("Projekt nicht gefunden", "not_found")
+    if get_user_project_role(db, user, project) is None:
+        raise ProjectError("Kein Zugriff auf dieses Projekt", "forbidden")
+    return _decrypt_project(project)
+
+
+def get_project_entity_by_key(db: Session, user: User, key: str) -> Project:
+    normalized = normalize_project_key(key)
+    project = (
+        db.query(Project)
+        .filter(Project.tenant_id == user.tenant_id, Project.key == normalized)
+        .first()
+    )
+    if not project:
+        raise ProjectError("Projekt nicht gefunden", "not_found")
+    if get_user_project_role(db, user, project) is None:
+        raise ProjectError("Kein Zugriff auf dieses Projekt", "forbidden")
+    return project
+
+
 def create_project(
     db: Session,
     user: User,
     *,
+    key: str,
     name: str,
+    project_type: str = "other",
     description: str | None = None,
     classification: int = DataClassification.INTERNAL,
 ) -> dict:
+    normalized_key = normalize_project_key(key)
+    validate_project_key(normalized_key)
+    validate_project_type(project_type)
+
+    existing = (
+        db.query(Project)
+        .filter(Project.tenant_id == user.tenant_id, Project.key == normalized_key)
+        .first()
+    )
+    if existing:
+        raise ProjectError("Projekt-Key ist bereits vergeben", "key_taken")
+
     project = Project(
         tenant_id=user.tenant_id,
         created_by_id=user.id,
+        key=normalized_key,
+        project_type=project_type,
         name_encrypted=encrypt_text_master(name),
         description_encrypted=encrypt_text_master(description) if description else None,
         classification=classification,
@@ -83,6 +135,7 @@ def create_project(
     db.add(project)
     db.flush()
     add_project_owner(db, project, user)
+    ensure_planning_framework(db, project)
     log_event(
         db,
         tenant_id=user.tenant_id,
@@ -90,6 +143,7 @@ def create_project(
         action="project.create",
         resource_type="project",
         resource_id=project.id,
+        detail=normalized_key,
     )
     return _decrypt_project(project)
 

@@ -131,6 +131,7 @@ class LoginChallenge(Base):
 
 class Project(Base, TimestampMixin):
     __tablename__ = "projects"
+    __table_args__ = (Index("ix_projects_tenant_key", "tenant_id", "key", unique=True),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -141,6 +142,8 @@ class Project(Base, TimestampMixin):
     created_by_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
+    key: Mapped[str] = mapped_column(String(8), nullable=False)
+    project_type: Mapped[str] = mapped_column(String(32), nullable=False, default="other")
     name_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     description_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     classification: Mapped[int] = mapped_column(
@@ -155,6 +158,53 @@ class Project(Base, TimestampMixin):
     tenant: Mapped["Tenant"] = relationship(back_populates="projects")
     tasks: Mapped[list["Task"]] = relationship(back_populates="project")
     members: Mapped[list["ProjectMember"]] = relationship(back_populates="project")
+    planning_framework: Mapped["PlanningFramework | None"] = relationship(
+        back_populates="project", uselist=False
+    )
+
+
+class PlanningFramework(Base, TimestampMixin):
+    __tablename__ = "planning_frameworks"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    project_idea_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    budget_basis_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    revision: Mapped[int] = mapped_column(BigInteger, default=1, nullable=False)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.CONFIDENTIAL, nullable=False
+    )
+
+    project: Mapped["Project"] = relationship(back_populates="planning_framework")
+    artifacts: Mapped[list["PlanningArtifact"]] = relationship(
+        back_populates="framework", cascade="all, delete-orphan"
+    )
+
+
+class PlanningArtifact(Base, TimestampMixin):
+    __tablename__ = "planning_artifacts"
+    __table_args__ = (Index("ix_planning_artifacts_framework_slug", "framework_id", "slug", unique=True),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    framework_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("planning_frameworks.id", ondelete="CASCADE"), nullable=False
+    )
+    slug: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[int] = mapped_column(SmallInteger, default=0, nullable=False)
+    content_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    version: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    generated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.CONFIDENTIAL, nullable=False
+    )
+
+    framework: Mapped["PlanningFramework"] = relationship(back_populates="artifacts")
 
 
 class ProjectMember(Base, TimestampMixin):
@@ -199,6 +249,26 @@ class Task(Base, TimestampMixin):
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     project: Mapped["Project"] = relationship(back_populates="tasks")
+
+
+class TenantLlmConfig(Base, TimestampMixin):
+    __tablename__ = "tenant_llm_configs"
+    __table_args__ = (Index("ix_tenant_llm_configs_tenant_active", "tenant_id", "is_active"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, default="openai")
+    model: Mapped[str] = mapped_column(String(128), nullable=False, default="gpt-4o-mini")
+    base_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    api_key_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.SECRET, nullable=False
+    )
 
 
 class AuditLog(Base):

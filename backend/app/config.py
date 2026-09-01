@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     login_challenge_ttl_sec: int = 300
     challenge_cookie_name: str = "pm_2fa_challenge"
 
+    # LLM (Fallback wenn keine tenant_llm_configs-Zeile aktiv)
+    llm_provider: str = "openai"  # openai | local
+    llm_model: str = "gpt-4o-mini"
+    llm_base_url: str = ""
+    llm_api_key_fallback: str = ""
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
