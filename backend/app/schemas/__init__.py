@@ -156,3 +156,13 @@ class GenerateIdeaRequest(BaseModel):
 
 class GenerateArtifactRequest(BaseModel):
     expected_revision: int = Field(ge=1)
+
+
+class BudgetBasisUpdateRequest(BaseModel):
+    budget_ceiling_chf: float | None = None
+    notes: str = ""
+    expected_revision: int = Field(ge=1)
+
+
+class BudgetBasisConfirmRequest(BaseModel):
+    expected_revision: int = Field(ge=1)

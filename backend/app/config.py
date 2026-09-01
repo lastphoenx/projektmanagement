@@ -28,9 +28,12 @@ class Settings(BaseSettings):
     login_challenge_ttl_sec: int = 300
     challenge_cookie_name: str = "pm_2fa_challenge"
 
-    # LLM (Fallback wenn keine tenant_llm_configs-Zeile aktiv)
-    llm_provider: str = "openai"  # openai | local
-    llm_model: str = "gpt-4o-mini"
+    # LLM — Infrastruktur-Defaults (.env); aktive Wahl in tenant_llm_configs (Admin-UI)
+    ollama_base_url: str = "http://192.168.131.60:11434"
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    llm_provider: str = "ollama"
+    llm_model: str = ""
     llm_base_url: str = ""
     llm_api_key_fallback: str = ""
 

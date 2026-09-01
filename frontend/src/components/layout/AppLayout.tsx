@@ -3,15 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, FolderKanban } from "lucide-react";
+import { Activity, FolderKanban, Shield, Sparkles } from "lucide-react";
 import { LayoutShell } from "@/components/layout/PageContainer";
 import { APP_COPYRIGHT, APP_NAME, APP_VERSION_LABEL } from "@/lib/appMeta";
 import { fetchMe, logout, type User } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const navigation = [
+const baseNavigation = [
   { name: "Projekte", href: "/projects", icon: FolderKanban },
   { name: "Status", href: "/", icon: Activity },
+];
+
+const adminNavigation = [
+  { name: "KI-Einstellungen", href: "/admin/llm", icon: Sparkles },
+  { name: "Sicherheit", href: "/admin/security", icon: Shield },
 ];
 
 interface AppLayoutProps {
@@ -36,6 +41,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   const roleLabel = user?.is_admin ? "Administrator" : "Benutzer";
+  const navigation = user?.is_admin
+    ? [...baseNavigation, ...adminNavigation]
+    : baseNavigation;
 
   return (
     <div className="min-h-screen app-page-bg pb-14">

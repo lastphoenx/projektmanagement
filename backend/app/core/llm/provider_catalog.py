@@ -1,0 +1,45 @@
+"""LLM-Provider-Katalog — statische Metadaten, keine SDK-Imports."""
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderDefinition:
+    id: str
+    label: str
+    is_local: bool
+    env_key_field: str | None  # Settings-Attribut für API-Key-Fallback
+    default_base_url: str | None
+
+
+PROVIDERS: dict[str, ProviderDefinition] = {
+    "ollama": ProviderDefinition(
+        id="ollama",
+        label="Lokal (Ollama / GMKtec)",
+        is_local=True,
+        env_key_field=None,
+        default_base_url="http://192.168.131.60:11434",
+    ),
+    "openai": ProviderDefinition(
+        id="openai",
+        label="OpenAI",
+        is_local=False,
+        env_key_field="openai_api_key",
+        default_base_url="https://api.openai.com/v1",
+    ),
+    "anthropic": ProviderDefinition(
+        id="anthropic",
+        label="Anthropic",
+        is_local=False,
+        env_key_field="anthropic_api_key",
+        default_base_url="https://api.anthropic.com/v1",
+    ),
+}
+
+STATIC_MODELS: dict[str, list[str]] = {
+    "openai": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
+    "anthropic": ["claude-sonnet-4-0", "claude-3-5-haiku-latest"],
+    "ollama": [],  # live von /api/tags
+}
+
+OPENAI_COMPAT_PROVIDERS = frozenset({"ollama", "openai"})

@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { ChevronRight, Clock, FolderKanban, Plus } from "lucide-react";
+import { ChevronRight, Clock, FolderKanban, Plus, Trash2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { fetchMe, fetchProjects, type Project, type User } from "@/lib/api";
+import { fetchMe, fetchProjects, deleteProject, type Project, type User } from "@/lib/api";
 import { WIZARD_PROJECT_TYPE_LABELS, type WizardProjectType } from "@/lib/project-types";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,27 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(project: Project) {
+    if (
+      !window.confirm(
+        `Projekt «${project.name}» (${project.key}) wirklich löschen? Dies kann nicht rückgängig gemacht werden.`
+      )
+    ) {
+      return;
+    }
+    setDeletingId(project.id);
+    setError(null);
+    try {
+      await deleteProject(project.id);
+      setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Löschen fehlgeschlagen");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   useEffect(() => {
     fetchMe()
@@ -87,7 +108,12 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onDelete={handleDelete}
+                deleting={deletingId === project.id}
+              />
             ))}
           </div>
         )}
@@ -96,7 +122,15 @@ export default function ProjectsPage() {
   );
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({
+  project,
+  onDelete,
+  deleting,
+}: {
+  project: Project;
+  onDelete: (project: Project) => void;
+  deleting: boolean;
+}) {
   const typeLabel =
     project.project_type in WIZARD_PROJECT_TYPE_LABELS
       ? WIZARD_PROJECT_TYPE_LABELS[project.project_type as WizardProjectType]
@@ -140,6 +174,22 @@ function ProjectCard({ project }: { project: Project }) {
             Planung öffnen <ChevronRight className="w-4 h-4" />
           </span>
         </Link>
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            disabled={deleting}
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete(project);
+            }}
+            title="Projekt löschen"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
