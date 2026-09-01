@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
+  Pencil,
   Save,
   Sparkles,
+  X,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -27,6 +29,7 @@ import {
   saveProjectIdea,
   setPlanningArtifactStatus,
   updateBudgetBasis,
+  updateProject,
   type PlanningState,
   type Project,
   type PspAnalysis,
@@ -56,6 +59,9 @@ export default function PlanningPage() {
   const [budgetCeiling, setBudgetCeiling] = useState("");
   const [budgetNotes, setBudgetNotes] = useState("");
   const [budgetLoading, setBudgetLoading] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!projectKey) return;
@@ -227,6 +233,44 @@ export default function PlanningPage() {
     }
   }
 
+  function startNameEdit() {
+    if (!project) return;
+    setNameDraft(project.name);
+    setEditingName(true);
+  }
+
+  function cancelNameEdit() {
+    setEditingName(false);
+    setNameDraft("");
+  }
+
+  async function saveNameEdit() {
+    if (!project) return;
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      setError("Projektname darf nicht leer sein.");
+      return;
+    }
+    if (trimmed === project.name) {
+      cancelNameEdit();
+      return;
+    }
+    setNameSaving(true);
+    setError(null);
+    try {
+      const updated = await updateProject(project.id, {
+        name: trimmed,
+        version: project.version,
+      });
+      setProject(updated);
+      cancelNameEdit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Name konnte nicht gespeichert werden");
+    } finally {
+      setNameSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <AppLayout>
@@ -270,9 +314,57 @@ export default function PlanningPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-mono text-muted-foreground mb-1">{projectKey}</p>
-              <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight">
-                {project?.name ?? "Planung"}
-              </h1>
+              {editingName ? (
+                <div className="flex flex-wrap items-center gap-2 max-w-xl">
+                  <Input
+                    value={nameDraft}
+                    onChange={(e) => setNameDraft(e.target.value)}
+                    className="font-display text-lg font-semibold h-10"
+                    maxLength={256}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void saveNameEdit();
+                      if (e.key === "Escape") cancelNameEdit();
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void saveNameEdit()}
+                    disabled={nameSaving}
+                  >
+                    {nameSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Speichern
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={cancelNameEdit}
+                    disabled={nameSaving}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight">
+                    {project?.name ?? "Planung"}
+                  </h1>
+                  {project && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground"
+                      onClick={startNameEdit}
+                      title="Projektname bearbeiten"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
               {typeLabel && (
                 <p className="text-sm text-muted-foreground mt-1">{typeLabel}</p>
               )}
