@@ -61,8 +61,10 @@ docker compose up -d
 - [x] Planungs-UI: Sidebar, Markdown-Editor, Vorschau, Status
 - [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.1)
 - [x] KI für Idee + Schritte 1–3 (Phase 4c, sync — `core/llm/` + PII-Gate-Stub)
+- [x] Admin-UI: KI-Einstellungen (`/admin/llm`), Sicherheitskatalog (`/admin/security`)
+- [x] PSP-Budgetauswertung Schritt 3 (Phase 5, Basis)
 - [ ] Celery für lange KI-Jobs (optional, später)
-- [ ] PSP-Parser, Budgetbasis, Schritte 7–8 (Phase 5)
+- [ ] Jira-CSV, Budgetplan Schritte 7–8 (Phase 5)
 
 ### Planungs-API
 
@@ -145,6 +147,7 @@ Vollständige Anleitung im `doku`-Repo: `pve2/vm/129-projektmanagement/`
 | Aufgabe | Befehl / Ort |
 |---------|----------------|
 | Deploy / Update | `./scripts/deploy.sh` |
+| Docker IPv4-Fix (CT ohne IPv6) | `./scripts/fix-docker-ipv4.sh` (als root; auch via `deploy.sh`) |
 | DB-Backup | `./scripts/backup-db.sh` |
 | nginx | CT 108 → `pm.example.app.conf` |
 | 2FA | `2fa-einrichtung.md` |
