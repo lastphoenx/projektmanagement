@@ -11,6 +11,7 @@ import {
   Pencil,
   Save,
   Sparkles,
+  Table,
   X,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -24,6 +25,7 @@ import {
   fetchProjectByKey,
   fetchPspAnalysis,
   generatePlanningArtifact,
+  generateJiraCsvFromPsp,
   generateProjectIdea,
   savePlanningArtifact,
   saveProjectIdea,
@@ -196,6 +198,22 @@ export default function PlanningPage() {
   const canGenerateKi =
     activeStep === PLANNING_IDEA.key ||
     ["zielplanung", "projektbeschrieb", "psp"].includes(activeStep);
+
+  const canGenerateFromPsp = activeStep === "jira_csv";
+
+  async function onGenerateFromPsp() {
+    if (!planning) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const updated = await generateJiraCsvFromPsp(projectKey, planning.revision);
+      setPlanning(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Jira-CSV-Generierung fehlgeschlagen");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function onSaveBudgetBasis() {
     if (!planning) return;
@@ -559,6 +577,21 @@ export default function PlanningPage() {
                 )}
                 Speichern
               </Button>
+              {canGenerateFromPsp && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onGenerateFromPsp}
+                  disabled={generating || saving}
+                >
+                  {generating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Table className="w-4 h-4" />
+                  )}
+                  Aus PSP generieren
+                </Button>
+              )}
               {canGenerateKi && (
                 <Button
                   type="button"
