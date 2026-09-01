@@ -4,6 +4,25 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 type FetchOptions = RequestInit & { json?: unknown };
 
+function formatApiError(detail: unknown, fallback: string): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object" && "msg" in item) {
+          return String((item as { msg: unknown }).msg);
+        }
+        return JSON.stringify(item);
+      })
+      .join(", ");
+  }
+  if (detail && typeof detail === "object" && "message" in detail) {
+    return String((detail as { message: unknown }).message);
+  }
+  return fallback;
+}
+
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const { json, headers, ...rest } = options;
   const res = await fetch(`${API_URL}${path}`, {
@@ -17,7 +36,7 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail ?? `API ${res.status}`);
+    throw new Error(formatApiError(err.detail, `API ${res.status}`));
   }
   if (res.status === 204) return undefined as T;
   return res.json();

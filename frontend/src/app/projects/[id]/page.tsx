@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
+import { ArrowLeft, CheckCircle2, Circle, Loader2, Lock, Pencil } from "lucide-react";
+import AppLayout from "@/components/layout/AppLayout";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   createTask,
   fetchProject,
@@ -13,7 +18,12 @@ import {
   unlockTask,
   updateTask,
 } from "@/lib/api";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
+const STATUS_LABELS: Record<string, string> = {
+  open: "Offen",
+  in_progress: "In Arbeit",
+  done: "Erledigt",
+};
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -70,89 +80,132 @@ export default function ProjectDetailPage() {
 
   if (error && !project) {
     return (
-      <main style={{ maxWidth: 720, margin: "3rem auto", padding: "0 1.5rem" }}>
-        <p>{error}</p>
-        <Link href="/projects">Zurück</Link>
-      </main>
+      <AppLayout>
+        <PageContainer width="narrow">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button variant="outline" asChild>
+            <Link href="/projects">
+              <ArrowLeft className="w-4 h-4" />
+              Zurück
+            </Link>
+          </Button>
+        </PageContainer>
+      </AppLayout>
     );
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "3rem auto", padding: "0 1.5rem" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "2rem",
-        }}
-      >
-        <div>
-          <Link href="/projects" style={{ fontSize: "0.875rem" }}>
-            ← Projekte
+    <AppLayout>
+      <PageContainer>
+        <div className="mb-8">
+          <Link
+            href="/projects"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Projekte
           </Link>
-          <h1 style={{ margin: "0.5rem 0 0" }}>{project?.name ?? "…"}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight">
+            {project?.name ?? "…"}
+          </h1>
           {project?.description && (
-            <p style={{ color: "var(--muted)", margin: "0.5rem 0 0" }}>{project.description}</p>
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-2xl">{project.description}</p>
           )}
         </div>
-        <ThemeToggle />
-      </header>
 
-      {error && <p style={{ color: "#ef4444" }}>{error}</p>}
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-6">
+            {error}
+          </p>
+        )}
 
-      <h2 style={{ fontSize: "1.125rem" }}>Tasks</h2>
-      <form onSubmit={onCreate} style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Neuer Task…"
-          style={{ flex: 1, padding: 8 }}
-        />
-        <button type="submit">Hinzufügen</button>
-      </form>
+        <section>
+          <h2 className="font-display text-lg font-semibold mb-4">Tasks</h2>
 
-      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {tasks.map((task) => (
-          <li
-            key={task.id}
-            style={{
-              background: "var(--card)",
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: "1rem",
-              marginBottom: "0.75rem",
-            }}
+          <form
+            onSubmit={onCreate}
+            className="flex flex-col sm:flex-row gap-2 mb-6 rounded-2xl border border-border/70 bg-card/80 shadow-card p-4"
           >
-            {editingId === task.id ? (
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  style={{ flex: 1, padding: 8 }}
-                />
-                <button type="button" onClick={() => saveEdit(task)}>
-                  Speichern
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <strong>{task.title}</strong>
-                  <span style={{ marginLeft: 8, color: "var(--muted)", fontSize: "0.75rem" }}>
-                    {task.status}
-                    {task.locked_by_id ? " · 🔒" : ""}
-                  </span>
-                </div>
-                <button type="button" onClick={() => startEdit(task)}>
-                  Bearbeiten
-                </button>
-              </div>
-            )}
-          </li>
-        ))}
-        {tasks.length === 0 && <p style={{ color: "var(--muted)" }}>Noch keine Tasks.</p>}
-      </ul>
-    </main>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Neuer Task…"
+              className="flex-1"
+            />
+            <Button type="submit" className="shrink-0">
+              Hinzufügen
+            </Button>
+          </form>
+
+          {tasks.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8 rounded-2xl border border-dashed border-border/70">
+              Noch keine Tasks.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {tasks.map((task) => (
+                <li
+                  key={task.id}
+                  className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-4 stat-card"
+                >
+                  {editingId === task.id ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button type="button" onClick={() => saveEdit(task)}>
+                        Speichern
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <StatusIcon status={task.status} />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{task.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <span className="text-xs rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
+                              {STATUS_LABELS[task.status] ?? task.status}
+                            </span>
+                            {task.locked_by_id && (
+                              <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                                <Lock className="w-3 h-3" />
+                                Gesperrt
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEdit(task)}
+                        className="shrink-0"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Bearbeiten
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </PageContainer>
+    </AppLayout>
   );
+}
+
+function StatusIcon({ status }: { status: string }) {
+  if (status === "done") {
+    return <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />;
+  }
+  if (status === "in_progress") {
+    return <Loader2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />;
+  }
+  return <Circle className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />;
 }

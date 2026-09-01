@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import config
@@ -64,11 +64,11 @@ def _user_response(user: User) -> UserResponse:
     return UserResponse(**user_public_dict(user))
 
 
-def _finish_login(db: Session, user: User, response: Response) -> LoginResponse:
+def _finish_login(db: Session, user: User, response: Response, request: Request) -> LoginResponse:
     token, _ = create_session(db, user.id)
     db.commit()
-    set_session_cookie(response, token)
-    clear_challenge_cookie(response)
+    set_session_cookie(response, token, request=request)
+    clear_challenge_cookie(response, request=request)
     return LoginResponse(user=_user_response(user))
 
 
@@ -98,15 +98,15 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @auth_router.post("/login", response_model=LoginResponse)
-def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(body: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     try:
         user = authenticate_password(db, body.email, body.password)
         if user.totp_enabled:
             challenge = start_2fa_challenge(db, user)
             db.commit()
-            set_challenge_cookie(response, challenge)
+            set_challenge_cookie(response, challenge, request=request)
             return LoginResponse(requires_2fa=True)
-        return _finish_login(db, user, response)
+        return _finish_login(db, user, response, request)
     except AuthError as exc:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=exc.message) from exc
@@ -115,6 +115,7 @@ def login(body: LoginRequest, response: Response, db: Session = Depends(get_db))
 @auth_router.post("/2fa/verify", response_model=LoginResponse)
 def verify_2fa(
     body: TwoFactorVerifyRequest,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
     challenge_token: str = Depends(get_challenge_token),
@@ -128,7 +129,7 @@ def verify_2fa(
             totp_code=body.totp_code,
             recovery_code=body.recovery_code,
         )
-        return _finish_login(db, user, response)
+        return _finish_login(db, user, response, request)
     except AuthError as exc:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=exc.message) from exc
@@ -136,14 +137,15 @@ def verify_2fa(
 
 @auth_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
     session_token: str | None = Cookie(default=None, alias=config.settings.cookie_name),
 ):
     if session_token:
         revoke_session(db, session_token)
-    clear_session_cookie(response)
-    clear_challenge_cookie(response)
+    clear_session_cookie(response, request=request)
+    clear_challenge_cookie(response, request=request)
     db.commit()
 
 

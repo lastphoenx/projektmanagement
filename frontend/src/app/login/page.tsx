@@ -1,12 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { APP_COPYRIGHT, APP_NAME } from "@/lib/appMeta";
 import { login, verify2fa } from "@/lib/api";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from") || "/projects";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [needs2fa, setNeeds2fa] = useState(false);
@@ -23,7 +29,8 @@ export default function LoginPage() {
       if (res.requires_2fa) {
         setNeeds2fa(true);
       } else {
-        router.push("/projects");
+        router.push(from);
+        router.refresh();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login fehlgeschlagen");
@@ -38,7 +45,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await verify2fa(totpCode);
-      router.push("/projects");
+      router.push(from);
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "2FA fehlgeschlagen");
     } finally {
@@ -47,57 +55,88 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "4rem auto", padding: "0 1.5rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
-        <h1 style={{ margin: 0 }}>Anmelden</h1>
-        <ThemeToggle />
-      </header>
+    <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 shadow-md shadow-primary/25">
+            <span className="text-primary-foreground font-bold text-xl">PM</span>
+          </div>
+          <h1 className="font-display text-2xl font-semibold text-foreground">{APP_NAME}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {needs2fa ? "Zwei-Faktor-Authentifizierung" : "Bitte melde dich an"}
+          </p>
+        </div>
 
-      {!needs2fa ? (
-        <form onSubmit={onLogin} style={{ display: "grid", gap: "1rem" }}>
-          <label>
-            E-Mail
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4, padding: 8 }}
-            />
-          </label>
-          <label>
-            Passwort
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ display: "block", width: "100%", marginTop: 4, padding: 8 }}
-            />
-          </label>
-          {error && <p style={{ color: "#ef4444", margin: 0 }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "…" : "Login"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={on2fa} style={{ display: "grid", gap: "1rem" }}>
-          <p style={{ color: "var(--muted)" }}>2FA-Code aus der Authenticator-App:</p>
-          <input
-            type="text"
-            inputMode="numeric"
-            required
-            value={totpCode}
-            onChange={(e) => setTotpCode(e.target.value)}
-            placeholder="123456"
-            style={{ padding: 8 }}
-          />
-          {error && <p style={{ color: "#ef4444", margin: 0 }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "…" : "Bestätigen"}
-          </button>
-        </form>
-      )}
-    </main>
+        <div className="bg-card rounded-2xl shadow-card border border-border/80 p-6">
+          {!needs2fa ? (
+            <form onSubmit={onLogin} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">E-Mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Passwort</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              {error && (
+                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Anmelden…" : "Anmelden"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={on2fa} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Code aus der Authenticator-App eingeben:
+              </p>
+              <Input
+                type="text"
+                inputMode="numeric"
+                required
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value)}
+                placeholder="123456"
+                autoComplete="one-time-code"
+              />
+              {error && (
+                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Prüfen…" : "Bestätigen"}
+              </Button>
+            </form>
+          )}
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground mt-6">{APP_COPYRIGHT}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
