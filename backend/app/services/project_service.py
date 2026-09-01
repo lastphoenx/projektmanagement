@@ -160,13 +160,18 @@ def update_project(
     project = db.get(Project, project_id)
     if not project or project.tenant_id != user.tenant_id:
         raise ProjectError("Projekt nicht gefunden", "not_found")
-    require_role(db, user, project, ProjectRole.MANAGER)
     if project.version != version:
         raise ProjectError("Konflikt – Datensatz wurde zwischenzeitlich geändert", "version_conflict")
-    try:
-        require_lock(project, user.id)
-    except LockError as exc:
-        raise ProjectError(exc.message, exc.code) from exc
+
+    name_only = name is not None and description is None
+    if name_only:
+        require_role(db, user, project, ProjectRole.MEMBER)
+    else:
+        require_role(db, user, project, ProjectRole.MANAGER)
+        try:
+            require_lock(project, user.id)
+        except LockError as exc:
+            raise ProjectError(exc.message, exc.code) from exc
 
     if name is not None:
         project.name_encrypted = encrypt_text_master(name)

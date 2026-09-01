@@ -185,6 +185,14 @@ export const createProject = (data: {
   });
 export const deleteProject = (id: string) =>
   apiFetch<void>(`/api/v1/projects/${id}`, { method: "DELETE" });
+export const updateProject = (
+  id: string,
+  data: { name?: string; description?: string | null; version: number }
+) =>
+  apiFetch<Project>(`/api/v1/projects/${id}`, {
+    method: "PATCH",
+    json: data,
+  });
 export const fetchPlanning = (projectKey: string) =>
   apiFetch<PlanningState>(
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning`
