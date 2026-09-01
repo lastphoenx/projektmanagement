@@ -15,10 +15,10 @@ class ProviderDefinition:
 PROVIDERS: dict[str, ProviderDefinition] = {
     "ollama": ProviderDefinition(
         id="ollama",
-        label="Lokal (Ollama / GMKtec)",
+        label="Lokal (Ollama)",
         is_local=True,
         env_key_field=None,
-        default_base_url="http://192.168.131.60:11434",
+        default_base_url=None,
     ),
     "openai": ProviderDefinition(
         id="openai",

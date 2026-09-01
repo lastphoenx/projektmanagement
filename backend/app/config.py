@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     challenge_cookie_name: str = "pm_2fa_challenge"
 
     # LLM — Infrastruktur-Defaults (.env); aktive Wahl in tenant_llm_configs (Admin-UI)
-    ollama_base_url: str = "http://192.168.131.60:11434"
+    ollama_base_url: str = ""
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     llm_provider: str = "ollama"
