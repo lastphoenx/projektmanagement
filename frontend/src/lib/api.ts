@@ -154,7 +154,6 @@ export type SecurityCatalogState = {
     model: string;
     table: string;
     default_classification: string;
-    description: string;
     policy_source: string;
   }[];
   field_registry_overrides: {

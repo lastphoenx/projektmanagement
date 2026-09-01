@@ -3,41 +3,9 @@
 from app.core.crypto.classification import DataClassification
 from app.core.crypto.classification_catalog import get_policy
 from app.core.crypto.field_registry import FIELD_REGISTRY
+from app.core.crypto.table_defaults import table_default_name_for_model, table_defaults_as_dicts
+from app.core.db.session import Base
 from app.services.planning_constants import ARTIFACT_LABELS, ARTIFACT_ORDER
-
-# Tabellen-Defaults aus SQLAlchemy-Modellen (Ebene 1)
-TABLE_DEFAULTS: list[dict] = [
-    {
-        "model": "Project",
-        "table": "projects",
-        "default_classification": DataClassification.INTERNAL.name,
-        "description": "Projekt-Stammdaten (Key, Typ, Metadaten)",
-    },
-    {
-        "model": "PlanningFramework",
-        "table": "planning_frameworks",
-        "default_classification": DataClassification.CONFIDENTIAL.name,
-        "description": "Planungskern: Idee + Budgetbasis",
-    },
-    {
-        "model": "PlanningArtifact",
-        "table": "planning_artifacts",
-        "default_classification": DataClassification.CONFIDENTIAL.name,
-        "description": "10 Planungsartefakte (Markdown je Schritt)",
-    },
-    {
-        "model": "Task",
-        "table": "tasks",
-        "default_classification": DataClassification.INTERNAL.name,
-        "description": "Legacy-Tasks (API, UI ausgeblendet)",
-    },
-    {
-        "model": "User",
-        "table": "users",
-        "default_classification": DataClassification.SECRET.name,
-        "description": "Benutzerprofil (verschlüsselt)",
-    },
-]
 
 PLANNING_STEP_FIELDS: list[dict] = [
     {
@@ -46,7 +14,6 @@ PLANNING_STEP_FIELDS: list[dict] = [
         "slug": None,
         "model": "PlanningFramework",
         "field": "project_idea_encrypted",
-        "table": "planning_frameworks",
     },
     {
         "step_number": None,
@@ -54,7 +21,6 @@ PLANNING_STEP_FIELDS: list[dict] = [
         "slug": None,
         "model": "PlanningFramework",
         "field": "budget_basis_encrypted",
-        "table": "planning_frameworks",
         "note": "Kein eigener Sidebar-Schritt — Panel nach PSP",
     },
 ]
@@ -67,7 +33,6 @@ for idx, slug in enumerate(ARTIFACT_ORDER, start=1):
             "slug": slug,
             "model": "PlanningArtifact",
             "field": "content_encrypted",
-            "table": "planning_artifacts",
         }
     )
 
@@ -78,6 +43,9 @@ def _effective_classification(model: str, field: str, table_default: str) -> str
 
 
 def get_security_catalog_state() -> dict:
+    table_defaults = table_defaults_as_dicts(Base)
+    table_default_by_model = {row["model"]: row["default_classification"] for row in table_defaults}
+
     classes = []
     for level in DataClassification:
         policy = get_policy(level)
@@ -97,19 +65,9 @@ def get_security_catalog_state() -> dict:
             }
         )
 
-    table_defaults = []
-    for row in TABLE_DEFAULTS:
-        table_defaults.append(
-            {
-                **row,
-                "policy_source": "classification_catalog",
-            }
-        )
-
     fields = []
     for f in FIELD_REGISTRY.values():
-        table_row = next((t for t in TABLE_DEFAULTS if t["model"] == f.model), None)
-        table_default = table_row["default_classification"] if table_row else "INTERNAL"
+        table_default = table_default_by_model.get(f.model, "INTERNAL")
         fields.append(
             {
                 "model": f.model,
@@ -125,13 +83,14 @@ def get_security_catalog_state() -> dict:
     for step in PLANNING_STEP_FIELDS:
         model = step["model"]
         field = step["field"]
-        table_row = next((t for t in TABLE_DEFAULTS if t["model"] == model), None)
-        table_default = table_row["default_classification"] if table_row else "INTERNAL"
+        table_default = table_default_name_for_model(Base, model) or "INTERNAL"
         effective = _effective_classification(model, field, table_default)
         entry = FIELD_REGISTRY.get((model, field))
+        table_name = next((t["table"] for t in table_defaults if t["model"] == model), "")
         planning_steps.append(
             {
                 **step,
+                "table": table_name,
                 "table_default": table_default,
                 "effective_classification": effective,
                 "has_field_override": entry is not None and entry.classification.name != table_default,
@@ -146,7 +105,7 @@ def get_security_catalog_state() -> dict:
         "catalog_version": "B.1",
         "concept": {
             "level_1": "Schutzklassen-Katalog — Regeln pro Klasse (Retention, DSGVO, LLM, Löschung)",
-            "level_2": "Tabellen-Default am SQLAlchemy-Modell (classification-Spalte)",
+            "level_2": "Tabellen-Default aus SQLAlchemy-Model (classification-Spalte, introspectiert)",
             "level_3": "Feld-Registry — Code-Override nur bei Abweichung vom Tabellen-Default",
         },
     }
