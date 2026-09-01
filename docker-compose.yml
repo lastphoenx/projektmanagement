@@ -20,6 +20,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      # CT ohne IPv6-Upstream: Build/Pull sonst an CloudFront v6 scheitern
+      network: host
     restart: unless-stopped
     depends_on:
       db:
@@ -34,6 +36,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      network: host
       args:
         API_INTERNAL_URL: http://api:8000
     restart: unless-stopped
