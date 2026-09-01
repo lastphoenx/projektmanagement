@@ -47,6 +47,8 @@ export type User = { id: string; is_admin: boolean; totp_enabled: boolean };
 export type LoginResponse = { requires_2fa: boolean; user?: User };
 export type Project = {
   id: string;
+  key: string;
+  project_type: string;
   name: string;
   description: string | null;
   classification: number;
@@ -71,6 +73,33 @@ export type Task = {
 };
 export type Member = { id: string; user_id: string; role: string; created_at: string };
 
+export type PlanningArtifact = {
+  slug: string;
+  status: string;
+  content: string;
+  version: number;
+  generated_at: string | null;
+  has_content: boolean;
+};
+
+export type PlanningCompletion = {
+  has_project_idea: boolean;
+  filled_count: number;
+  total_count: number;
+  artifact_filled: number;
+  artifact_total: number;
+  is_complete: boolean;
+};
+
+export type PlanningState = {
+  project_key: string;
+  revision: number;
+  project_idea: string;
+  budget_basis: Record<string, unknown>;
+  artifacts: PlanningArtifact[];
+  completion: PlanningCompletion;
+};
+
 export const fetchHealth = () => apiFetch<HealthResponse>("/api/v1/health");
 export const fetchMe = () => apiFetch<User>("/api/v1/auth/me");
 export const login = (email: string, password: string) =>
@@ -83,8 +112,64 @@ export const verify2fa = (totp_code?: string, recovery_code?: string) =>
 export const logout = () => apiFetch<void>("/api/v1/auth/logout", { method: "POST" });
 export const fetchProjects = () => apiFetch<Project[]>("/api/v1/projects");
 export const fetchProject = (id: string) => apiFetch<Project>(`/api/v1/projects/${id}`);
-export const createProject = (name: string, description?: string) =>
-  apiFetch<Project>("/api/v1/projects", { method: "POST", json: { name, description } });
+export const fetchProjectByKey = (key: string) =>
+  apiFetch<Project>(`/api/v1/projects/by-key/${encodeURIComponent(key)}`);
+export const createProject = (data: {
+  key: string;
+  name: string;
+  project_type: string;
+  description?: string;
+}) =>
+  apiFetch<Project>("/api/v1/projects", {
+    method: "POST",
+    json: data,
+  });
+export const fetchPlanning = (projectKey: string) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning`
+  );
+export const saveProjectIdea = (projectKey: string, idea: string, expectedRevision: number) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/idea`,
+    { method: "PUT", json: { idea, expected_revision: expectedRevision } }
+  );
+export const savePlanningArtifact = (
+  projectKey: string,
+  slug: string,
+  content: string,
+  expectedVersion: number
+) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/artifacts/${slug}`,
+    { method: "PUT", json: { content, expected_version: expectedVersion } }
+  );
+export const setPlanningArtifactStatus = (
+  projectKey: string,
+  slug: string,
+  status: "pending" | "draft" | "approved"
+) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/artifacts/${slug}/status`,
+    { method: "PATCH", json: { status } }
+  );
+export const generateProjectIdea = (
+  projectKey: string,
+  expectedRevision: number,
+  seed?: string
+) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/idea`,
+    { method: "POST", json: { expected_revision: expectedRevision, seed } }
+  );
+export const generatePlanningArtifact = (
+  projectKey: string,
+  slug: string,
+  expectedRevision: number
+) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/artifacts/${slug}`,
+    { method: "POST", json: { expected_revision: expectedRevision } }
+  );
 export const fetchTasks = (projectId: string) =>
   apiFetch<Task[]>(`/api/v1/projects/${projectId}/tasks`);
 export const createTask = (projectId: string, title: string, body?: string) =>

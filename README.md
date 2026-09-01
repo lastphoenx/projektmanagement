@@ -54,7 +54,29 @@ docker compose up -d
 | CONFIDENTIAL | 2 | Master-Key (.env) |
 | SECRET | 3 | Passwort-abgeleiteter User-Key |
 
-## Phase 3 (aktuell)
+## Phase 4 (aktuell)
+
+- [x] Projekt-Key + Projekttyp (Wizard: Typ → Details → Fertig)
+- [x] Planungskern: Idee + 10 Artefakte (PostgreSQL, verschlüsselt)
+- [x] Planungs-UI: Sidebar, Markdown-Editor, Vorschau, Status
+- [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.1)
+- [x] KI für Idee + Schritte 1–3 (Phase 4c, sync — `core/llm/` + PII-Gate-Stub)
+- [ ] Celery für lange KI-Jobs (optional, später)
+- [ ] PSP-Parser, Budgetbasis, Schritte 7–8 (Phase 5)
+
+### Planungs-API
+
+| Methode | Pfad | Beschreibung |
+|---------|------|--------------|
+| GET | `/api/v1/projects/by-key/{key}` | Projekt per Key |
+| GET | `/api/v1/projects/by-key/{key}/planning` | Planungsstand |
+| PUT | `.../planning/idea` | Projektidee speichern |
+| PUT | `.../planning/artifacts/{slug}` | Artefakt speichern |
+| PATCH | `.../planning/artifacts/{slug}/status` | Status setzen |
+
+Migration: `cd backend && alembic upgrade head` (Revision `004`)
+
+## Phase 3
 
 - [x] Tasks CRUD (verschlüsselt, Status: open / in_progress / done)
 - [x] RBAC – Rollen viewer, member, manager, owner

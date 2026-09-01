@@ -29,6 +29,9 @@ export DOCKER_BUILDKIT=1
 docker compose build
 docker compose up -d
 
+echo "==> DB-Migration"
+docker compose exec -T api alembic upgrade head
+
 echo "==> Health (über Frontend-Proxy)"
 sleep 3
 if ! curl -fsS "http://127.0.0.1:3000/api/v1/health"; then

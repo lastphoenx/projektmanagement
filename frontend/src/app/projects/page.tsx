@@ -7,14 +7,13 @@ import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { createProject, fetchMe, fetchProjects, type Project, type User } from "@/lib/api";
+import { fetchMe, fetchProjects, type Project, type User } from "@/lib/api";
+import { WIZARD_PROJECT_TYPE_LABELS, type WizardProjectType } from "@/lib/project-types";
 import { cn } from "@/lib/utils";
 
 export default function ProjectsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,18 +26,6 @@ export default function ProjectsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  async function onCreate(e: FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    try {
-      const p = await createProject(name.trim());
-      setProjects((prev) => [p, ...prev]);
-      setName("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Fehler");
-    }
-  }
 
   if (error === "auth" && !user) {
     return (
@@ -67,21 +54,14 @@ export default function ProjectsPage() {
           }
         />
 
-        <form
-          onSubmit={onCreate}
-          className="flex flex-col sm:flex-row gap-2 mb-8 rounded-2xl border border-border/70 bg-card/80 shadow-card p-4"
-        >
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Neues Projekt…"
-            className="flex-1"
-          />
-          <Button type="submit" className="shrink-0">
-            <Plus className="w-4 h-4" />
-            Anlegen
+        <div className="mb-8">
+          <Button asChild>
+            <Link href="/projects/new">
+              <Plus className="w-4 h-4" />
+              Neues Projekt anlegen
+            </Link>
           </Button>
-        </form>
+        </div>
 
         {error && user && (
           <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-6">
@@ -97,9 +77,12 @@ export default function ProjectsPage() {
               <FolderKanban className="w-7 h-7" />
             </div>
             <h3 className="font-display text-lg font-semibold mb-2">Noch keine Projekte</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Lege oben dein erstes Projekt an.
+            <p className="text-muted-foreground max-w-md mx-auto mb-6">
+              Lege dein erstes Projekt an und starte mit den Planungsschritten.
             </p>
+            <Button asChild>
+              <Link href="/projects/new">Projekt anlegen</Link>
+            </Button>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -114,6 +97,11 @@ export default function ProjectsPage() {
 }
 
 function ProjectCard({ project }: { project: Project }) {
+  const typeLabel =
+    project.project_type in WIZARD_PROJECT_TYPE_LABELS
+      ? WIZARD_PROJECT_TYPE_LABELS[project.project_type as WizardProjectType]
+      : project.project_type;
+
   return (
     <div className="relative group h-full">
       <div
@@ -123,20 +111,25 @@ function ProjectCard({ project }: { project: Project }) {
           "hover:border-primary/30 hover:shadow-card-hover hover:-translate-y-0.5"
         )}
       >
-        <Link href={`/projects/${project.id}`} className="flex flex-col flex-1 cursor-pointer p-5 sm:p-6">
+        <Link
+          href={`/projects/${project.key}/planung`}
+          className="flex flex-col flex-1 cursor-pointer p-5 sm:p-6"
+        >
           <div className="flex items-start gap-3 mb-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
               <FolderKanban className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
+              <p className="text-xs font-mono text-muted-foreground mb-0.5">{project.key}</p>
               <h2 className="font-display text-lg font-semibold tracking-tight truncate group-hover:text-primary transition-colors">
                 {project.name}
               </h2>
+              {typeLabel && (
+                <p className="text-xs text-muted-foreground mt-1">{typeLabel}</p>
+              )}
               {project.description ? (
                 <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{project.description}</p>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-0.5">Keine Beschreibung</p>
-              )}
+              ) : null}
             </div>
           </div>
           <div className="flex items-center text-xs text-muted-foreground mt-auto">
@@ -144,7 +137,7 @@ function ProjectCard({ project }: { project: Project }) {
             {new Date(project.updated_at).toLocaleDateString("de-CH")}
           </div>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-            Öffnen <ChevronRight className="w-4 h-4" />
+            Planung öffnen <ChevronRight className="w-4 h-4" />
           </span>
         </Link>
       </div>
