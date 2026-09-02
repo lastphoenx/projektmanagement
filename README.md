@@ -171,9 +171,20 @@ cd backend && pytest -v
 
 Vollständige Anleitung im `doku`-Repo: `pve2/vm/129-projektmanagement/`
 
+### Deploy-Modi
+
+| Situation | Befehl | Dauer (typ.) |
+|-----------|--------|--------------|
+| Nur `backend/app/*.py` geändert | `./scripts/deploy-quick.sh` | ~30s |
+| Frontend geändert | `DEPLOY_TARGET=frontend ./scripts/deploy.sh` | ~1–2 min |
+| `requirements.txt` / Dockerfile | `DEPLOY_TARGET=api ./scripts/deploy.sh` | ~3–5 min (mit Cache) |
+| Alles / unsicher | `./scripts/deploy.sh` | variabel |
+
+`pip install` im Docker-Build läuft **nur**, wenn sich `requirements.txt` ändert — danach ist die Schicht gecacht. Cache-Leeren nur bei Bedarf: `DOCKER_PRUNE_BUILDER=1 ./scripts/deploy.sh`.
+
 | Aufgabe | Befehl / Ort |
 |---------|----------------|
-| Deploy / Update | `./scripts/deploy.sh` |
+| Deploy / Update | `./scripts/deploy.sh` (voll) · `./scripts/deploy-quick.sh` (nur Backend-Code, ~30s) |
 | Docker IPv4-Fix (CT ohne IPv6) | `./scripts/fix-docker-ipv4.sh` (als root; auch via `deploy.sh`) |
 | DB-Backup | `./scripts/backup-db.sh` |
 | nginx | CT 108 → `pm.santinel.li.conf` |
