@@ -5,7 +5,9 @@ from app.api.admin import admin_router
 from app.api.health import router as health_router
 from app.api.planning import planning_router
 from app.api.portfolio import portfolio_router
-from app.api.routes import auth_router, projects_router
+from app.api.auth import auth_router
+from app.api.projects import projects_router
+from app.api.tasks import tasks_router
 from app.config import settings
 from app.core.security.rate_limit import RateLimitMiddleware
 
@@ -28,6 +30,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
+app.include_router(tasks_router, prefix="/api/v1")
 app.include_router(planning_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
