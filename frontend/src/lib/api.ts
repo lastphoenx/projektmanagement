@@ -336,3 +336,52 @@ export const updateTask = (
   });
 export const unlockTask = (projectId: string, taskId: string) =>
   apiFetch<Task>(`/api/v1/projects/${projectId}/tasks/${taskId}/lock`, { method: "DELETE" });
+
+export type {
+  PortfolioEligibleProject,
+  PortfolioFormData,
+  PortfolioMatrixPoint,
+  PortfolioProject,
+  PortfolioWsjfItem,
+} from "@/lib/portfolio-types";
+
+export const fetchPortfolioProjects = () =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioProject[]>("/api/v1/portfolio/projects");
+
+export const fetchPortfolioEligibleProjects = () =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioEligibleProject[]>(
+    "/api/v1/portfolio/eligible-projects"
+  );
+
+export const fetchPortfolioMatrix = () =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioMatrixPoint[]>(
+    "/api/v1/portfolio/matrix-data"
+  );
+
+export const fetchPortfolioWsjf = () =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioWsjfItem[]>(
+    "/api/v1/portfolio/wsjf-ranking"
+  );
+
+export const fetchPortfolioProject = (id: string) =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioProject>(
+    `/api/v1/portfolio/projects/${id}`
+  );
+
+export const createPortfolioProject = (data: import("@/lib/portfolio-types").PortfolioFormData & { project_key: string }) =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioProject>("/api/v1/portfolio/projects", {
+    method: "POST",
+    json: data,
+  });
+
+export const updatePortfolioProject = (
+  id: string,
+  data: Partial<import("@/lib/portfolio-types").PortfolioFormData>
+) =>
+  apiFetch<import("@/lib/portfolio-types").PortfolioProject>(
+    `/api/v1/portfolio/projects/${id}`,
+    { method: "PUT", json: data }
+  );
+
+export const deletePortfolioProject = (id: string) =>
+  apiFetch<void>(`/api/v1/portfolio/projects/${id}`, { method: "DELETE" });
