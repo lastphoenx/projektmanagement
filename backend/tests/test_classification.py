@@ -46,7 +46,18 @@ def test_gdpr_fields_for_user():
 def test_table_defaults_from_models():
     from app.core.crypto.table_defaults import discover_table_classification_defaults
     from app.core.db.session import Base
-    from app.models import PlanningArtifact, PlanningFramework, Project, Task, User
+    from app.models import (
+        LoginChallenge,
+        PlanningArtifact,
+        PlanningFramework,
+        Project,
+        ProjectMember,
+        RecoveryCode,
+        Task,
+        User,
+        UserLlmPreference,
+        UserSession,
+    )
 
     by_model = {row.model: row for row in discover_table_classification_defaults(Base)}
 
@@ -55,8 +66,31 @@ def test_table_defaults_from_models():
     assert by_model["User"].default_classification == DataClassification.SECRET.name
     assert by_model["PlanningFramework"].default_classification == DataClassification.CONFIDENTIAL.name
     assert by_model["PlanningArtifact"].default_classification == DataClassification.CONFIDENTIAL.name
+    assert by_model["UserSession"].default_classification == DataClassification.INTERNAL.name
+    assert by_model["LoginChallenge"].default_classification == DataClassification.INTERNAL.name
 
-    # Sanity: introspection finds the models we care about
-    for cls in (Project, User, Task, PlanningFramework, PlanningArtifact):
+    # Alle 14 App-Tabellen mit classification-Spalte
+    assert len(by_model) == 14
+
+    for cls in (
+        Project,
+        User,
+        Task,
+        PlanningFramework,
+        PlanningArtifact,
+        UserSession,
+        RecoveryCode,
+        LoginChallenge,
+        ProjectMember,
+        UserLlmPreference,
+    ):
         assert cls.__name__ in by_model
+
+
+def test_field_registry_secret_credentials():
+    from app.core.crypto.field_registry import FIELD_REGISTRY
+
+    assert FIELD_REGISTRY[("User", "password_hash")].classification == DataClassification.SECRET
+    assert FIELD_REGISTRY[("UserSession", "token_hash")].classification == DataClassification.SECRET
+    assert FIELD_REGISTRY[("LoginChallenge", "token_hash")].classification == DataClassification.SECRET
 

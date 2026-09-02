@@ -198,6 +198,26 @@ export default function AdminSecurityPage() {
                 </table>
               </div>
             </section>
+
+            {catalog.portfolio_metadata_notes && catalog.portfolio_metadata_notes.length > 0 && (
+              <section>
+                <h2 className="font-display text-lg font-semibold mb-1">Portfolio-Fachfelder</h2>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Business-Labels im WSJF-Formular — getrennt von der technischen{" "}
+                  <code className="text-xs">classification</code>-Spalte.
+                </p>
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-2">
+                  {catalog.portfolio_metadata_notes.map((note) => (
+                    <li key={`${note.model}.${note.field}`}>
+                      <span className="font-mono text-foreground">
+                        {note.model}.{note.field}
+                      </span>
+                      : {note.note}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         )}
       </PageContainer>

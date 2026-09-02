@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.crypto.classification_catalog import get_policy
 from app.core.crypto.field_registry import gdpr_fields_for_model
-from app.models import AuditLog, Project, ProjectMember, User, UserSession
+from app.models import AuditLog, Project, ProjectMember, User, UserLlmPreference, UserSession
 
 
 class PrivacyError(Exception):
@@ -47,6 +47,8 @@ def export_user_data(db: Session, user_id: uuid.UUID) -> dict[str, Any]:
         .limit(50)
         .all()
     )
+
+    llm_pref = db.get(UserLlmPreference, user.id)
 
     gdpr_field_manifest = [
         {
@@ -101,6 +103,18 @@ def export_user_data(db: Session, user_id: uuid.UUID) -> dict[str, Any]:
             }
             for s in sessions
         ],
+        "llm_preference": (
+            {
+                "provider": llm_pref.provider,
+                "model": llm_pref.model,
+                "updated_at": llm_pref.updated_at.isoformat(),
+            }
+            if llm_pref
+            else None
+        ),
+        "login_challenges_note": (
+            "Aktive Login-Challenges werden nicht exportiert (kurzlebig, max. wenige Minuten)."
+        ),
         "audit_events": [
             {
                 "id": str(e.id),

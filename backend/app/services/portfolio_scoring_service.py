@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.crypto.portfolio_fields import portfolio_name, read_financial, write_financial
 from app.models import PortfolioProject
 
 REFERENCE_DURATION_MONTHS = 6.0
@@ -18,9 +19,14 @@ class PortfolioScoringService:
 
     @classmethod
     def sync_derived_financial_metrics(cls, project: PortfolioProject) -> None:
-        project.financial_roi_pct = cls.derive_roi_pct(
-            project.financial_npv or 0,
-            project.cost_total or 0,
+        fin = read_financial(project)
+        roi = cls.derive_roi_pct(fin["financial_npv"], fin["cost_total"])
+        write_financial(
+            project,
+            financial_npv=fin["financial_npv"],
+            financial_roi_pct=roi,
+            payback_months=fin["payback_months"],
+            cost_total=fin["cost_total"],
         )
 
     @staticmethod
@@ -58,10 +64,11 @@ class PortfolioScoringService:
 
     @classmethod
     def calculate_value_score(cls, project: PortfolioProject) -> float:
-        roi = cls.derive_roi_pct(project.financial_npv or 0, project.cost_total or 0)
-        npv = project.financial_npv or 0
-        payback = project.payback_months or 36
-        cost = project.cost_total or 1
+        fin = read_financial(project)
+        roi = cls.derive_roi_pct(fin["financial_npv"], fin["cost_total"])
+        npv = fin["financial_npv"]
+        payback = fin["payback_months"] or 36
+        cost = fin["cost_total"] or 1
         roi_component = min(roi / 5, 40)
         npv_normalized = min((npv / cost) * 20, 40) if cost > 0 else 0
         payback_normalized = max(40 - (payback * 40 / 36), 0)
@@ -137,13 +144,14 @@ class PortfolioScoringService:
                 project.strategic_importance or 0,
                 project.feasibility_index or 0,
             )
-            size_npv = max(int(project.financial_npv or 0), 0)
+            size_npv = max(read_financial(project)["financial_npv"], 0)
+            fin = read_financial(project)
             result.append(
                 {
                     "id": str(project.id),
                     "display_number": project.display_number,
                     "project_key": project.project.key if project.project else None,
-                    "name": project.name,
+                    "name": portfolio_name(project),
                     "x": project.feasibility_index,
                     "y": project.strategic_importance,
                     "size_npv": size_npv,
@@ -152,7 +160,7 @@ class PortfolioScoringService:
                     "category": project.category,
                     "wsjf": project.wsjf,
                     "composite_score": project.composite_score,
-                    "cost_total": project.cost_total,
+                    "cost_total": fin["cost_total"],
                 }
             )
         return result
@@ -167,23 +175,24 @@ class PortfolioScoringService:
             key=lambda p: (
                 -(p.wsjf or 0),
                 -(p.strategic_importance or 0),
-                (p.cost_total or 0),
+                read_financial(p)["cost_total"],
                 str(p.id),
             ),
         )
         ranking: list[dict[str, Any]] = []
         for rank, project in enumerate(sorted_projects, start=1):
+            fin = read_financial(project)
             ranking.append(
                 {
                     "rank": rank,
                     "id": str(project.id),
-                    "name": project.name,
+                    "name": portfolio_name(project),
                     "project_key": project.project.key if project.project else None,
                     "wsjf": project.wsjf,
                     "tier": project.tier,
                     "category": project.category,
                     "strategic_importance": project.strategic_importance,
-                    "cost_total": project.cost_total,
+                    "cost_total": fin["cost_total"],
                 }
             )
         return ranking

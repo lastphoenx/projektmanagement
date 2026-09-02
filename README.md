@@ -61,7 +61,7 @@ docker compose up -d
 - [x] Projekt-Key + Projekttyp (Wizard: Typ → Details → Fertig)
 - [x] Planungskern: Idee + 10 Artefakte (PostgreSQL, verschlüsselt)
 - [x] Planungs-UI: Sidebar, Markdown-Editor, Vorschau, Status
-- [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.1)
+- [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.2 — 14 Tabellen)
 - [x] KI für Idee + Schritte 1–3 (sync — `core/llm/` + `core/anonymization/pii_gate.py`)
 - [x] Admin-UI: KI-Einstellungen (`/admin/llm`), Sicherheitskatalog (`/admin/security`), DSGVO (`/admin/privacy`)
 - [x] PSP-Budgetauswertung Schritt 3

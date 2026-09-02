@@ -36,11 +36,50 @@ FIELD_REGISTRY: dict[tuple[str, str], FieldClassification] = {
     ("Task", "body_encrypted"): FieldClassification(
         "Task", "body_encrypted", DataClassification.CONFIDENTIAL, gdpr_personal=False
     ),
+    ("PortfolioProject", "name_encrypted"): FieldClassification(
+        "PortfolioProject", "name_encrypted", DataClassification.CONFIDENTIAL
+    ),
+    ("PortfolioProject", "sponsor_encrypted"): FieldClassification(
+        "PortfolioProject", "sponsor_encrypted", DataClassification.CONFIDENTIAL, gdpr_personal=True
+    ),
+    ("PortfolioProject", "objective_1_encrypted"): FieldClassification(
+        "PortfolioProject", "objective_1_encrypted", DataClassification.CONFIDENTIAL
+    ),
+    ("PortfolioProject", "objective_2_encrypted"): FieldClassification(
+        "PortfolioProject", "objective_2_encrypted", DataClassification.CONFIDENTIAL
+    ),
+    ("PortfolioProject", "objective_3_encrypted"): FieldClassification(
+        "PortfolioProject", "objective_3_encrypted", DataClassification.CONFIDENTIAL
+    ),
+    ("PortfolioProject", "financial_encrypted"): FieldClassification(
+        "PortfolioProject", "financial_encrypted", DataClassification.CONFIDENTIAL
+    ),
     ("User", "encrypted_profile"): FieldClassification(
         "User", "encrypted_profile", DataClassification.SECRET, gdpr_personal=True
     ),
     ("User", "email_hash"): FieldClassification(
         "User", "email_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("User", "password_hash"): FieldClassification(
+        "User", "password_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("User", "encryption_salt"): FieldClassification(
+        "User", "encryption_salt", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("User", "totp_secret_encrypted"): FieldClassification(
+        "User", "totp_secret_encrypted", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("UserSession", "token_hash"): FieldClassification(
+        "UserSession", "token_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("RecoveryCode", "code_hash"): FieldClassification(
+        "RecoveryCode", "code_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("LoginChallenge", "token_hash"): FieldClassification(
+        "LoginChallenge", "token_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("ProjectMember", "user_id"): FieldClassification(
+        "ProjectMember", "user_id", DataClassification.INTERNAL, gdpr_personal=True
     ),
     ("AuditLog", "actor_id"): FieldClassification(
         "AuditLog", "actor_id", DataClassification.INTERNAL, gdpr_personal=True
