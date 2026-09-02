@@ -85,19 +85,10 @@ def _artifact_dict(artifact: PlanningArtifact) -> dict:
 
 
 def _completion_stats(project_idea: str, artifacts: list[PlanningArtifact]) -> dict:
-    idea_filled = bool(project_idea.strip())
-    artifact_filled = sum(1 for a in artifacts if _decrypt_optional(a.content_encrypted).strip())
-    total_artifacts = len(ARTIFACT_ORDER)
-    filled_count = (1 if idea_filled else 0) + artifact_filled
-    total_count = 1 + total_artifacts
-    return {
-        "has_project_idea": idea_filled,
-        "filled_count": filled_count,
-        "total_count": total_count,
-        "artifact_filled": artifact_filled,
-        "artifact_total": total_artifacts,
-        "is_complete": idea_filled and artifact_filled == total_artifacts,
-    }
+    from app.services.planning_completion_service import assess_planning_completion
+
+    artifact_dicts = [_artifact_dict(a) for a in artifacts]
+    return assess_planning_completion(project_idea, artifact_dicts)
 
 
 def get_planning_state(db: Session, user: User, project: Project) -> dict:

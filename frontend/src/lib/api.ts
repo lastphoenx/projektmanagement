@@ -82,13 +82,24 @@ export type PlanningArtifact = {
   has_content: boolean;
 };
 
+export type PlanningCompletionStep = {
+  key: string;
+  label: string;
+  filled: boolean;
+  status: string;
+};
+
 export type PlanningCompletion = {
   has_project_idea: boolean;
   filled_count: number;
   total_count: number;
   artifact_filled: number;
   artifact_total: number;
+  approved_count: number;
   is_complete: boolean;
+  is_fully_approved: boolean;
+  missing_labels: string[];
+  steps: PlanningCompletionStep[];
 };
 
 export type PlanningState = {
