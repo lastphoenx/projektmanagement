@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, Clock, FolderKanban, Plus, Trash2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -74,16 +74,15 @@ export default function ProjectsPage() {
                 }`
               : undefined
           }
+          actions={
+            <Button asChild>
+              <Link href="/projects/new">
+                <Plus className="w-4 h-4" />
+                Neues Projekt
+              </Link>
+            </Button>
+          }
         />
-
-        <div className="mb-8">
-          <Button asChild>
-            <Link href="/projects/new">
-              <Plus className="w-4 h-4" />
-              Neues Projekt anlegen
-            </Link>
-          </Button>
-        </div>
 
         {error && user && <InlineAlert className="mb-6">{error}</InlineAlert>}
 
@@ -96,7 +95,7 @@ export default function ProjectsPage() {
             </div>
             <h3 className="font-display text-lg font-semibold mb-2">Noch keine Projekte</h3>
             <p className="text-muted-foreground max-w-md mx-auto mb-6">
-              Lege dein erstes Projekt an und starte mit den Planungsschritten.
+              Lege dein erstes Projekt an und starte mit den 11 Planungsschritten.
             </p>
             <Button asChild>
               <Link href="/projects/new">Projekt anlegen</Link>
@@ -156,7 +155,7 @@ function ProjectCard({
                 {project.name}
               </h2>
               {typeLabel && (
-                <p className="text-xs text-muted-foreground mt-1">{typeLabel}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mt-1">{typeLabel}</p>
               )}
               {project.description ? (
                 <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{project.description}</p>

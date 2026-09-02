@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, ArrowRight, Shield } from "lucide-react";
+import { Activity, ArrowRight, ClipboardList, Shield } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { fetchHealth, type HealthResponse } from "@/lib/api";
 
 export default function HomePage() {
@@ -24,8 +25,8 @@ export default function HomePage() {
     <AppLayout>
       <PageContainer width="medium">
         <PageHeader
-          title="Systemstatus"
-          description="Self-hosted Foundation — Auth, 2FA, verschlüsselte Projekte & Tasks"
+          title="Übersicht"
+          description="Projektmanagement mit KI-Planungskern, verschlüsselter Speicherung und RBAC."
           actions={
             <Button asChild>
               <Link href="/projects">
@@ -36,20 +37,19 @@ export default function HomePage() {
           }
         />
 
+        {error && <InlineAlert className="mb-6">{error}</InlineAlert>}
+
         <div className="grid sm:grid-cols-2 gap-5">
-          <Card className="stat-card border-border/70">
+          <Card className="stat-card rounded-2xl border-border/70 shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-display">
                 <Activity className="w-5 h-5 text-primary" />
                 API
               </CardTitle>
               <CardDescription>Backend-Erreichbarkeit</CardDescription>
             </CardHeader>
             <CardContent>
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
-              {health && (
+              {health ? (
                 <dl className="space-y-2 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Status</dt>
@@ -60,26 +60,45 @@ export default function HomePage() {
                     <dd className="font-medium">{health.tenant}</dd>
                   </div>
                 </dl>
-              )}
-              {!health && !error && (
+              ) : !error ? (
                 <p className="text-sm text-muted-foreground">Verbinde…</p>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 
-          <Card className="stat-card border-border/70">
+          <Card className="stat-card rounded-2xl border-border/70 shadow-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Sicherheit
+              <CardTitle className="flex items-center gap-2 font-display">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Planungskern
               </CardTitle>
-              <CardDescription>Phase 1–3 Foundation</CardDescription>
+              <CardDescription>Projektidee + 10 Planungsschritte</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="text-sm space-y-1.5 text-muted-foreground">
+                <li>KI für Idee und Schritte 1–6, 9–10</li>
+                <li>Jira CSV & Budgetplan aus PSP</li>
+                <li>Vollständigkeits-Indikator pro Projekt</li>
+              </ul>
+              <Button variant="outline" size="sm" className="mt-4" asChild>
+                <Link href="/projects/new">Neues Projekt anlegen</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="stat-card rounded-2xl border-border/70 shadow-card sm:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-display">
+                <Shield className="w-5 h-5 text-primary" />
+                Sicherheit
+              </CardTitle>
+              <CardDescription>Verschlüsselung, Auth & Klassifizierung</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm space-y-1.5 text-muted-foreground sm:columns-2 sm:gap-8">
                 <li>Session-Login mit HttpOnly-Cookie</li>
                 <li>TOTP 2FA + Recovery Codes</li>
-                <li>Verschlüsselte Projekt- & Task-Daten</li>
+                <li>Verschlüsselte Projekt- & Planungsdaten</li>
                 <li>RBAC mit Soft-Locking</li>
               </ul>
               <Button variant="outline" size="sm" className="mt-4" asChild>

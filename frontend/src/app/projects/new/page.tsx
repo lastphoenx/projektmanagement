@@ -1,13 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import { BackLink } from "@/components/layout/BackLink";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { WizardStepIndicator } from "@/components/wizard/WizardStepIndicator";
 import { Button } from "@/components/ui/button";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createProject } from "@/lib/api";
@@ -56,46 +58,19 @@ export default function NewProjectPage() {
   return (
     <AppLayout>
       <PageContainer width="narrow">
-        <Link
-          href="/projects"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Projekte
-        </Link>
+        <BackLink href="/projects">Projekte</BackLink>
 
         <PageHeader
           title="Neues Projekt"
           description="Projekttyp wählen, Key und Name festlegen — danach startest du mit den Planungsschritten."
         />
 
-        <div className="flex gap-2 mb-8">
-          {STEPS.map((label, index) => (
-            <div
-              key={label}
-              className={cn(
-                "flex-1 rounded-lg border px-3 py-2 text-center text-xs font-medium",
-                index === step
-                  ? "border-primary bg-primary/10 text-primary"
-                  : index < step
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
-                    : "border-border/70 text-muted-foreground"
-              )}
-            >
-              {index < step ? <Check className="w-3 h-3 inline mr-1" /> : null}
-              {index + 1}. {label}
-            </div>
-          ))}
-        </div>
+        <WizardStepIndicator steps={STEPS} currentStep={step} />
 
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-6">
-            {error}
-          </p>
-        )}
+        {error && <InlineAlert className="mb-6">{error}</InlineAlert>}
 
         {step === 0 && (
-          <section className="space-y-4">
+          <section className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-6 space-y-4">
             <p className="text-sm text-muted-foreground">
               Kategorie für die Einordnung — die Planungsschritte sind für alle Typen gleich.
             </p>
@@ -108,8 +83,8 @@ export default function NewProjectPage() {
                   className={cn(
                     "rounded-xl border p-4 text-left transition-colors",
                     projectType === type
-                      ? "border-primary bg-primary/5"
-                      : "border-border/70 hover:border-primary/30"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                      : "border-border/70 hover:border-primary/30 hover:bg-muted/30"
                   )}
                 >
                   <p className="font-medium">{WIZARD_PROJECT_TYPE_LABELS[type]}</p>
@@ -163,11 +138,11 @@ export default function NewProjectPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="planning-editor-field w-full min-h-[5rem]"
                 placeholder="Kurzbeschreibung…"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={() => setStep(0)}>
                 Zurück
               </Button>
@@ -180,8 +155,11 @@ export default function NewProjectPage() {
         )}
 
         {step === 2 && (
-          <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-border/70 bg-card/80 shadow-card p-6">
-            <dl className="space-y-3 text-sm">
+          <form
+            onSubmit={onSubmit}
+            className="space-y-5 rounded-2xl border border-border/70 bg-card/80 shadow-card p-6"
+          >
+            <dl className="space-y-3 text-sm rounded-xl border border-border/70 bg-muted/20 p-4">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Typ</dt>
                 <dd className="font-medium">{WIZARD_PROJECT_TYPE_LABELS[projectType]}</dd>
@@ -195,7 +173,7 @@ export default function NewProjectPage() {
                 <dd className="font-medium text-right">{name}</dd>
               </div>
             </dl>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={() => setStep(1)}>
                 Zurück
               </Button>
