@@ -4,7 +4,7 @@ from app.core.anonymization.pii_gate import PIIGateError, gate_text
 from app.core.crypto.classification import DataClassification
 from app.core.llm.errors import LLMError
 from app.core.llm.providers import openai_compat
-from app.core.llm.types import LlmRequest, LlmRuntimeConfig
+from app.core.llm.types import LlmRequest, LlmResult, LlmRuntimeConfig
 
 
 def generate_text(
@@ -12,7 +12,7 @@ def generate_text(
     request: LlmRequest,
     *,
     data_classification: DataClassification = DataClassification.CONFIDENTIAL,
-) -> str:
+) -> LlmResult:
     try:
         safe_system = gate_text(
             request.system_prompt,

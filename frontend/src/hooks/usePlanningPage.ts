@@ -15,11 +15,21 @@ import {
   setPlanningArtifactStatus,
   updateBudgetBasis,
   updateProject,
+  type LlmUsage,
   type PlanningState,
   type Project,
   type PspAnalysis,
 } from "@/lib/api";
 import { PLANNING_FLOW_STEPS, PLANNING_IDEA, type PlanningStepKey } from "@/lib/planning-steps";
+
+function formatLlmUsageMessage(usage: LlmUsage): string {
+  const tokens = `${usage.input_tokens.toLocaleString()} in + ${usage.output_tokens.toLocaleString()} out (≈ ${usage.total_tokens.toLocaleString()} gesamt)`;
+  if (usage.is_local) {
+    return `KI lokal (${usage.model}): ${tokens} — keine API-Kosten`;
+  }
+  const cost = usage.estimated_cost_usd_display ?? "unbekannt";
+  return `KI (${usage.provider}/${usage.model}): ${tokens} — geschätzt ${cost} API (nicht ChatGPT Plus / Claude Pro)`;
+}
 
 export function usePlanningPage(projectKey: string) {
   const [project, setProject] = useState<Project | null>(null);
@@ -27,6 +37,7 @@ export function usePlanningPage(projectKey: string) {
   const [activeStep, setActiveStep] = useState<PlanningStepKey>(PLANNING_IDEA.key);
   const [draftContent, setDraftContent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [llmMessage, setLlmMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -144,6 +155,7 @@ export function usePlanningPage(projectKey: string) {
     if (!planning) return;
     setGenerating(true);
     setError(null);
+    setLlmMessage(null);
     try {
       const updated =
         activeStep === PLANNING_IDEA.key
@@ -154,6 +166,9 @@ export function usePlanningPage(projectKey: string) {
             )
           : await generatePlanningArtifact(projectKey, activeStep, planning.revision);
       setPlanning(updated);
+      if (updated.llm_usage) {
+        setLlmMessage(formatLlmUsageMessage(updated.llm_usage));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "KI-Generierung fehlgeschlagen");
     } finally {
@@ -284,6 +299,7 @@ export function usePlanningPage(projectKey: string) {
     setDraftContent,
     savedContent,
     error,
+    llmMessage,
     saving,
     generating,
     loading,

@@ -7,6 +7,7 @@ from app.core.crypto.classification import DataClassification
 from app.core.llm import generate_text
 from app.core.llm.errors import LLMError
 from app.core.llm.guidance import GUIDANCE
+from app.core.llm.token_cost import BILLING_NOTE, TYPICAL_PLANNING_TOKENS, pricing_catalog_for_ui
 from app.core.llm.types import LlmRequest, LlmRuntimeConfig
 from app.models import User, UserLlmPreference
 from app.services.llm_provider_service import (
@@ -53,6 +54,9 @@ def get_user_llm_state(db: Session, user: User) -> dict:
         "providers": list_providers_for_ui(),
         "active": {"provider": provider, "model": model, "source": source},
         "guidance": GUIDANCE,
+        "billing_note": BILLING_NOTE,
+        "pricing_catalog": pricing_catalog_for_ui(),
+        "typical_planning_tokens": TYPICAL_PLANNING_TOKENS,
     }
 
 
@@ -151,4 +155,4 @@ def test_user_llm_connection(db: Session, user: User, *, provider: str, model: s
         ),
         data_classification=DataClassification.PUBLIC,
     )
-    return {"ok": True, "message": f"Verbindung OK — Antwort: {reply[:80]}"}
+    return {"ok": True, "message": f"Verbindung OK — Antwort: {reply.text[:80]}"}

@@ -14,6 +14,10 @@ import {
   type UserLlmState,
 } from "@/lib/api";
 
+function formatUsdPerMtok(value: number): string {
+  return `$${value.toFixed(2)}`;
+}
+
 export default function UserLlmSettingsPage() {
   const [state, setState] = useState<UserLlmState | null>(null);
   const [provider, setProvider] = useState("ollama");
@@ -184,6 +188,74 @@ export default function UserLlmSettingsPage() {
                         <td className="py-2 pr-4 text-muted-foreground">{row.ollama}</td>
                         <td className="py-2 pr-4 text-muted-foreground">{row.openai}</td>
                         <td className="py-2 text-muted-foreground">{row.anthropic}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-6 space-y-4">
+              <h2 className="font-semibold">{state?.billing_note.title}</h2>
+              {state?.billing_note.paragraphs.map((p) => (
+                <p key={p.slice(0, 40)} className="text-sm text-muted-foreground">
+                  {p}
+                </p>
+              ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b border-border/60">
+                      <th className="py-2 pr-4">Abo</th>
+                      <th className="py-2 pr-4">Enthält</th>
+                      <th className="py-2">Nicht enthalten</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state?.billing_note.products.map((row) => (
+                      <tr key={row.name} className="border-b border-border/40">
+                        <td className="py-2 pr-4 font-medium">{row.name}</td>
+                        <td className="py-2 pr-4 text-muted-foreground">{row.covers}</td>
+                        <td className="py-2 text-muted-foreground">{row.not_covers}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-border/70 bg-card/60 p-6 space-y-3">
+              <h2 className="font-semibold">API-Preise (Pay-as-you-go, USD / 1M Token)</h2>
+              <p className="text-xs text-muted-foreground">
+                Grobe Schätzung — tatsächliche Abrechnung über OpenAI Platform bzw. Anthropic Console.
+                Spalte «Idee» ≈ typischer Projektidee-Aufruf (
+                {state?.typical_planning_tokens.project_idea.input.toLocaleString()} in /
+                {" "}
+                {state?.typical_planning_tokens.project_idea.output.toLocaleString()} out Token).
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b border-border/60">
+                      <th className="py-2 pr-4">Modell</th>
+                      <th className="py-2 pr-4">Input</th>
+                      <th className="py-2 pr-4">Output</th>
+                      <th className="py-2">≈ Idee</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state?.pricing_catalog.map((row) => (
+                      <tr key={row.model} className="border-b border-border/40">
+                        <td className="py-2 pr-4 font-medium">{row.model}</td>
+                        <td className="py-2 pr-4 text-muted-foreground">
+                          {formatUsdPerMtok(row.input_usd_per_mtok)}/M
+                        </td>
+                        <td className="py-2 pr-4 text-muted-foreground">
+                          {formatUsdPerMtok(row.output_usd_per_mtok)}/M
+                        </td>
+                        <td className="py-2 text-muted-foreground">
+                          ${row.example_idea_usd.toFixed(4)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

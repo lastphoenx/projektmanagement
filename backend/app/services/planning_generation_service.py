@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.auth.rbac import ProjectRole, require_role
 from app.core.crypto.classification import DataClassification
 from app.core.llm import generate_text
+from app.core.llm.token_cost import build_usage_estimate
 from app.core.llm.types import LlmRequest
 from app.models import Project, User
 from app.services.llm_config_service import get_runtime_config
@@ -231,6 +232,28 @@ def _require_prerequisite(artifacts: list[dict], slug: str) -> None:
         )
 
 
+def _run_planning_llm(
+    config,
+    request: LlmRequest,
+) -> tuple[str, dict]:
+    llm = generate_text(
+        config,
+        request,
+        data_classification=DataClassification.CONFIDENTIAL,
+    )
+    usage = build_usage_estimate(
+        provider=config.provider,
+        model=config.model,
+        is_local=config.is_local,
+        input_tokens=llm.input_tokens,
+        output_tokens=llm.output_tokens,
+        system_prompt=request.system_prompt,
+        user_prompt=request.user_prompt,
+        response_text=llm.text,
+    )
+    return llm.text, usage.to_dict()
+
+
 def generate_project_idea(
     db: Session,
     user: User,
@@ -257,14 +280,15 @@ Ausgangslage / Stichworte:
 {base}
 
 Abschnitte: Vision, Problemstellung, Nutzen, grober Scope."""
-    content = generate_text(
+    content, llm_usage = _run_planning_llm(
         config,
         LlmRequest(system_prompt=PLANNING_SYSTEM_PROMPT, user_prompt=prompt, model=config.model),
-        data_classification=DataClassification.CONFIDENTIAL,
     )
-    return save_project_idea(
+    result = save_project_idea(
         db, user, project, idea=content, expected_revision=expected_revision
     )
+    result["llm_usage"] = llm_usage
+    return result
 
 
 def generate_artifact(
@@ -324,7 +348,7 @@ def generate_artifact(
             pass
 
     config = get_runtime_config(db, user)
-    content = generate_text(
+    content, llm_usage = _run_planning_llm(
         config,
         LlmRequest(
             system_prompt=PLANNING_SYSTEM_PROMPT,
@@ -332,7 +356,6 @@ def generate_artifact(
             model=config.model,
             max_tokens=_MAX_TOKENS.get(slug, 4096),
         ),
-        data_classification=DataClassification.CONFIDENTIAL,
     )
 
     if slug == "einsatzmittelplan" and determ_table and "Ressourcenauslastung" not in (content or ""):
@@ -347,4 +370,5 @@ def generate_artifact(
         content=content,
         expected_version=artifact["version"],
     )
+    result["llm_usage"] = llm_usage
     return result

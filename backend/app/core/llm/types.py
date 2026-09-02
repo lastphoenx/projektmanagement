@@ -12,8 +12,15 @@ class LlmRequest:
 
 @dataclass(frozen=True, slots=True)
 class LlmRuntimeConfig:
-    provider: str  # openai | local
+    provider: str
     base_url: str | None
     api_key: str | None
     model: str
     is_local: bool
+
+
+@dataclass(frozen=True, slots=True)
+class LlmResult:
+    text: str
+    input_tokens: int | None = None
+    output_tokens: int | None = None

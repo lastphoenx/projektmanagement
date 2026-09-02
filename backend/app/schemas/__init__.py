@@ -137,6 +137,18 @@ class PlanningCompletionResponse(BaseModel):
     steps: list[PlanningCompletionStepResponse]
 
 
+class LlmUsageResponse(BaseModel):
+    provider: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    estimated_cost_usd: float | None = None
+    estimated_cost_usd_display: str | None = None
+    is_local: bool = False
+    billing_scope: str = "api_payg"
+
+
 class PlanningStateResponse(BaseModel):
     project_key: str
     revision: int
@@ -144,6 +156,7 @@ class PlanningStateResponse(BaseModel):
     budget_basis: dict
     artifacts: list[PlanningArtifactResponse]
     completion: PlanningCompletionResponse
+    llm_usage: LlmUsageResponse | None = None
 
 
 class SaveProjectIdeaRequest(BaseModel):
