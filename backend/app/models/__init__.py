@@ -78,6 +78,9 @@ class User(Base, TimestampMixin):
     tenant: Mapped["Tenant"] = relationship(back_populates="users")
     sessions: Mapped[list["UserSession"]] = relationship(back_populates="user")
     recovery_codes: Mapped[list["RecoveryCode"]] = relationship(back_populates="user")
+    llm_preference: Mapped["UserLlmPreference | None"] = relationship(
+        back_populates="user", uselist=False
+    )
 
 
 class UserSession(Base, TimestampMixin):
@@ -341,6 +344,20 @@ class TenantLlmConfig(Base, TimestampMixin):
     classification: Mapped[int] = mapped_column(
         SmallInteger, default=DataClassification.SECRET, nullable=False
     )
+
+
+class UserLlmPreference(Base, TimestampMixin):
+    """Pro Benutzer: Provider + Modell (Credentials nur in .env)."""
+
+    __tablename__ = "user_llm_preferences"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, default="ollama")
+    model: Mapped[str] = mapped_column(String(128), nullable=False, default="llama3.2")
+
+    user: Mapped["User"] = relationship(back_populates="llm_preference")
 
 
 class AuditLog(Base):

@@ -90,9 +90,18 @@ docker compose up -d
 
 Migration: `cd backend && alembic upgrade head`
 
-### Hintergrund-Jobs (geplant)
+### Hintergrund-Jobs (geplant — ARQ)
 
-Lange KI-Läufe laufen heute **synchron** im API-Worker (ein Request blockiert bis fertig). Für mehrere gleichzeitige Nutzer: Job-Queue (z. B. **Celery** + Redis, oder leichter **ARQ** / **RQ**) mit Status-Polling oder WebSocket — noch nicht implementiert.
+Lange KI-Läufe laufen heute **synchron** im API-Worker. Geplant: **ARQ + Redis** — siehe [docs/ARQ.md](docs/ARQ.md).
+
+### KI-Konfiguration
+
+| Wer | Was |
+|-----|-----|
+| **Betreiber** | `.env`: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_BASE_URL` |
+| **Jeder Benutzer** | App → **KI-Einstellungen**: Anbieter + Modell (keine Keys/IPs) |
+
+Cloud-Versand: PII-Gate anonymisiert INTERNAL/CONFIDENTIAL; SECRET wird blockiert.
 
 ## Phase 3
 

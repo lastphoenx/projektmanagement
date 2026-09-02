@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils";
 const baseNavigation = [
   { name: "Projekte", href: "/projects", icon: FolderKanban },
   { name: "Portfolio", href: "/portfolio", icon: LayoutGrid },
+  { name: "KI-Einstellungen", href: "/settings/llm", icon: Sparkles },
   { name: "Status", href: "/", icon: Activity },
 ];
 
 const adminNavigation = [
-  { name: "KI-Einstellungen", href: "/admin/llm", icon: Sparkles },
   { name: "Sicherheit", href: "/admin/security", icon: Shield },
   { name: "Datenschutz", href: "/admin/privacy", icon: ShieldCheck },
 ];
