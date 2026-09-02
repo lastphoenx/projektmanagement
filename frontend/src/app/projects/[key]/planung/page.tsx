@@ -27,6 +27,7 @@ import {
   fetchPspAnalysis,
   generatePlanningArtifact,
   generateJiraCsvFromPsp,
+  generateBudgetPlanFromPsp,
   generateProjectIdea,
   savePlanningArtifact,
   saveProjectIdea,
@@ -205,17 +206,21 @@ export default function PlanningPage() {
     activeStep === PLANNING_IDEA.key ||
     ["zielplanung", "projektbeschrieb", "psp"].includes(activeStep);
 
-  const canGenerateFromPsp = activeStep === "jira_csv";
+  const canGenerateFromPsp =
+    activeStep === "jira_csv" || activeStep === "budgetplan";
 
   async function onGenerateFromPsp() {
     if (!planning) return;
     setGenerating(true);
     setError(null);
     try {
-      const updated = await generateJiraCsvFromPsp(projectKey, planning.revision);
+      const updated =
+        activeStep === "budgetplan"
+          ? await generateBudgetPlanFromPsp(projectKey, planning.revision)
+          : await generateJiraCsvFromPsp(projectKey, planning.revision);
       setPlanning(updated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Jira-CSV-Generierung fehlgeschlagen");
+      setError(err instanceof Error ? err.message : "Generierung fehlgeschlagen");
     } finally {
       setGenerating(false);
     }

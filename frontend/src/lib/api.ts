@@ -269,6 +269,11 @@ export const generateJiraCsvFromPsp = (projectKey: string, expectedRevision: num
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/jira-csv`,
     { method: "POST", json: { expected_revision: expectedRevision } }
   );
+export const generateBudgetPlanFromPsp = (projectKey: string, expectedRevision: number) =>
+  apiFetch<PlanningState>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/budget-plan`,
+    { method: "POST", json: { expected_revision: expectedRevision } }
+  );
 export const fetchPspAnalysis = (projectKey: string) =>
   apiFetch<PspAnalysis>(
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/psp-analysis`
