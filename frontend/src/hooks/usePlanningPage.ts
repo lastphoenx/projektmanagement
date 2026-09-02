@@ -21,6 +21,7 @@ import {
   type PspAnalysis,
 } from "@/lib/api";
 import { PLANNING_FLOW_STEPS, PLANNING_IDEA, type PlanningStepKey } from "@/lib/planning-steps";
+import { usePlanningRealtime } from "@/hooks/usePlanningRealtime";
 
 function formatLlmUsageMessage(usage: LlmUsage): string {
   const tokens = `${usage.input_tokens.toLocaleString()} in + ${usage.output_tokens.toLocaleString()} out (≈ ${usage.total_tokens.toLocaleString()} gesamt)`;
@@ -72,6 +73,10 @@ export function usePlanningPage(projectKey: string) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  usePlanningRealtime(projectKey, () => {
+    void load();
+  });
 
   useEffect(() => {
     if (activeStep !== "psp" || !planning) {

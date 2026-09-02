@@ -42,7 +42,9 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key_fallback: str = ""
 
-    # B.3 Rate-Limiting (togglebar; CrowdSec-Vorbereitung)
+    # ARQ + Redis (Hintergrund-KI)
+    redis_url: str = "redis://redis:6379/0"
+    arq_enabled: bool = True
     rate_limit_enabled: bool = True
     api_rate_limit_per_minute: int = 120
     login_max_failures_per_user: int = 5

@@ -42,6 +42,20 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
   return res.json();
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function planningWsUrl(projectKey: string): string {
+  const base = process.env.NEXT_PUBLIC_WS_URL?.replace(/\/$/, "");
+  if (base) {
+    return `${base}/api/v1/ws/planning/${encodeURIComponent(projectKey)}`;
+  }
+  if (typeof window === "undefined") return "";
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${window.location.host}/api/v1/ws/planning/${encodeURIComponent(projectKey)}`;
+}
+
 export type HealthResponse = { status: string; tenant: string };
 export type User = { id: string; is_admin: boolean; totp_enabled: boolean };
 export type LoginResponse = { requires_2fa: boolean; user?: User };
@@ -110,6 +124,18 @@ export type PlanningState = {
   artifacts: PlanningArtifact[];
   completion: PlanningCompletion;
   llm_usage?: LlmUsage | null;
+};
+
+export type GenerationJobResponse = {
+  job_id: string;
+  status: "pending" | "running" | "done" | "failed" | string;
+  kind?: string;
+  project_key?: string;
+  artifact_slug?: string | null;
+  error_message?: string | null;
+  planning?: PlanningState | null;
+  created_at?: string;
+  completed_at?: string | null;
 };
 
 export type LlmUsage = {
@@ -308,23 +334,64 @@ export const setPlanningArtifactStatus = (
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/artifacts/${slug}/status`,
     { method: "PATCH", json: { status } }
   );
+
+export const fetchGenerationJob = (jobId: string) =>
+  apiFetch<GenerationJobResponse>(`/api/v1/jobs/${encodeURIComponent(jobId)}`);
+export const waitForPlanningJob = async (
+  jobId: string,
+  options?: { pollMs?: number; maxAttempts?: number }
+): Promise<PlanningState> => {
+  const pollMs = options?.pollMs ?? 1500;
+  const maxAttempts = options?.maxAttempts ?? 400;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const job = await fetchGenerationJob(jobId);
+    if (job.status === "done") {
+      if (!job.planning) throw new Error("Job ohne Planungsdaten abgeschlossen");
+      return job.planning;
+    }
+    if (job.status === "failed") {
+      throw new Error(job.error_message ?? "KI-Generierung fehlgeschlagen");
+    }
+    await sleep(pollMs);
+  }
+  throw new Error("KI-Generierung: Zeitüberschreitung beim Warten auf den Job");
+};
+
+async function postPlanningGenerate(path: string, body: unknown): Promise<PlanningState> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(formatApiError(err.detail, `API ${res.status}`));
+  }
+  if (res.status === 202) {
+    const accepted = (await res.json()) as { job_id: string };
+    return waitForPlanningJob(accepted.job_id);
+  }
+  return res.json() as Promise<PlanningState>;
+}
+
 export const generateProjectIdea = (
   projectKey: string,
   expectedRevision: number,
   seed?: string
 ) =>
-  apiFetch<PlanningState>(
+  postPlanningGenerate(
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/idea`,
-    { method: "POST", json: { expected_revision: expectedRevision, seed } }
+    { expected_revision: expectedRevision, seed }
   );
 export const generatePlanningArtifact = (
   projectKey: string,
   slug: string,
   expectedRevision: number
 ) =>
-  apiFetch<PlanningState>(
+  postPlanningGenerate(
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/generate/artifacts/${slug}`,
-    { method: "POST", json: { expected_revision: expectedRevision } }
+    { expected_revision: expectedRevision }
   );
 export const generateJiraCsvFromPsp = (projectKey: string, expectedRevision: number) =>
   apiFetch<PlanningState>(

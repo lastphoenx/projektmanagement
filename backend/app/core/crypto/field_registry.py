@@ -69,6 +69,36 @@ FIELD_REGISTRY: dict[tuple[str, str], FieldClassification] = {
     ("User", "totp_secret_encrypted"): FieldClassification(
         "User", "totp_secret_encrypted", DataClassification.SECRET, gdpr_personal=True
     ),
+    # Metadaten — Tabellen-Default User=SECRET gilt für die Zeile, nicht für jedes Feld
+    ("User", "id"): FieldClassification("User", "id", DataClassification.INTERNAL),
+    ("User", "tenant_id"): FieldClassification("User", "tenant_id", DataClassification.INTERNAL),
+    ("User", "totp_enabled"): FieldClassification("User", "totp_enabled", DataClassification.INTERNAL),
+    ("User", "is_admin"): FieldClassification("User", "is_admin", DataClassification.INTERNAL),
+    ("User", "is_active"): FieldClassification("User", "is_active", DataClassification.INTERNAL),
+    ("User", "classification"): FieldClassification(
+        "User", "classification", DataClassification.INTERNAL
+    ),
+    ("UserSession", "id"): FieldClassification("UserSession", "id", DataClassification.INTERNAL),
+    ("UserSession", "user_id"): FieldClassification(
+        "UserSession", "user_id", DataClassification.INTERNAL, gdpr_personal=True
+    ),
+    ("UserSession", "expires_at"): FieldClassification(
+        "UserSession", "expires_at", DataClassification.INTERNAL
+    ),
+    ("UserSession", "revoked_at"): FieldClassification(
+        "UserSession", "revoked_at", DataClassification.INTERNAL
+    ),
+    ("RecoveryCode", "id"): FieldClassification("RecoveryCode", "id", DataClassification.INTERNAL),
+    ("RecoveryCode", "user_id"): FieldClassification(
+        "RecoveryCode", "user_id", DataClassification.INTERNAL, gdpr_personal=True
+    ),
+    ("LoginChallenge", "id"): FieldClassification("LoginChallenge", "id", DataClassification.INTERNAL),
+    ("LoginChallenge", "user_id"): FieldClassification(
+        "LoginChallenge", "user_id", DataClassification.INTERNAL, gdpr_personal=True
+    ),
+    ("LoginChallenge", "expires_at"): FieldClassification(
+        "LoginChallenge", "expires_at", DataClassification.INTERNAL
+    ),
     ("UserSession", "token_hash"): FieldClassification(
         "UserSession", "token_hash", DataClassification.SECRET, gdpr_personal=True
     ),

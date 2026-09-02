@@ -61,7 +61,7 @@ docker compose up -d
 - [x] Projekt-Key + Projekttyp (Wizard: Typ → Details → Fertig)
 - [x] Planungskern: Idee + 10 Artefakte (PostgreSQL, verschlüsselt)
 - [x] Planungs-UI: Sidebar, Markdown-Editor, Vorschau, Status
-- [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.2 — 14 Tabellen)
+- [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.2 — 15 Tabellen)
 - [x] KI für Idee + Schritte 1–3 (sync — `core/llm/` + `core/anonymization/pii_gate.py`)
 - [x] Admin-UI: KI-Einstellungen (`/admin/llm`), Sicherheitskatalog (`/admin/security`), DSGVO (`/admin/privacy`)
 - [x] PSP-Budgetauswertung Schritt 3
@@ -69,8 +69,8 @@ docker compose up -d
 - [x] DOCX-Export (Gesamtplanung + einzelne Artefakte)
 - [x] Portfolio-MVP (`/portfolio`, WSJF-Matrix, CRUD)
 - [x] API-Router aufgeteilt (`auth`, `projects`, `tasks`, `planning`, `portfolio`, `admin`)
-- [ ] Hintergrund-Jobs für lange KI-Generierung (Celery/ARQ o. ä. — siehe unten)
-- [ ] WebSocket Live-Updates (optional, Phase 4+)
+- [x] Hintergrund-Jobs für lange KI-Generierung (ARQ + Redis — siehe [docs/ARQ.md](docs/ARQ.md))
+- [x] WebSocket Live-Updates (Planung — Redis Pub/Sub + `/api/v1/ws/planning/{key}`)
 
 ### Planungs-API (Auszug)
 
@@ -87,12 +87,14 @@ docker compose up -d
 | GET | `.../planning/export-docx` | Gesamtplanung als DOCX |
 | POST | `.../planning/generate/jira-csv` | Jira-CSV aus PSP |
 | POST | `.../planning/generate/budgetplan` | Budgetplan aus PSP |
+| GET | `/api/v1/jobs/{job_id}` | ARQ-Job-Status (Polling) |
+| WS | `/api/v1/ws/planning/{project_key}` | Live-Planungsupdates |
 
 Migration: `cd backend && alembic upgrade head`
 
-### Hintergrund-Jobs (geplant — ARQ)
+### Hintergrund-Jobs (ARQ)
 
-Lange KI-Läufe laufen heute **synchron** im API-Worker. Geplant: **ARQ + Redis** — siehe [docs/ARQ.md](docs/ARQ.md).
+Lange KI-Läufe (Idee + Artefakte 1–3) laufen als **ARQ-Job** mit Redis — siehe [docs/ARQ.md](docs/ARQ.md). Ohne Redis: automatischer Sync-Fallback.
 
 ### KI-Konfiguration
 
@@ -109,7 +111,7 @@ Cloud-Versand: PII-Gate anonymisiert INTERNAL/CONFIDENTIAL; SECRET wird blockier
 - [x] RBAC – Rollen viewer, member, manager, owner
 - [x] Soft-Locking (15 min Lease) für Projekt- und Task-Bearbeitung
 - [x] Projekt-Mitglieder verwalten
-- [ ] WebSocket Live-Updates (Phase 4+)
+- [x] WebSocket Live-Updates (Planung)
 
 ### Rollen
 

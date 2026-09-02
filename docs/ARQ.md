@@ -1,35 +1,44 @@
-# Hintergrund-Jobs mit ARQ (Entscheid)
+# Hintergrund-Jobs mit ARQ
 
-**Status:** geplant — noch nicht implementiert.
+**Status:** implementiert (Migration `010`, Redis + Worker in `docker-compose.yml`).
 
 ## Problem
 
-KI-Generierung in der Planung läuft heute **synchron** im API-Prozess. Bei mehreren Benutzern blockieren sich Requests; lange Läufe (30s–2min) führen zu Timeouts und schlechter UX.
+KI-Generierung in der Planung kann 30s–2min dauern. Synchron im API-Prozess blockiert Requests und riskiert Timeouts.
 
-## Entscheid
-
-**ARQ** (async Redis queue) statt Celery:
-
-- leichtgewichtig, passt zu FastAPI/async
-- Redis als Broker (ein zusätzlicher Container in `docker-compose.yml`)
-- Worker als separater Prozess/Container
-
-## Ziel-Architektur
+## Architektur
 
 ```
 POST /planning/generate/...  →  Job in Redis  →  202 { job_id }
 ARQ Worker                   →  LLM + Speichern →  Job status: done
-GET  /jobs/{id}              →  polling / später WebSocket
+GET  /jobs/{id}              →  Polling (Frontend wartet automatisch)
+WebSocket /ws/planning/{key} →  Live-Reload bei Speichern/Job-Ende
 ```
 
-## Umsetzungsschritte (Backlog)
+## Komponenten
 
-1. `redis` Service in `docker-compose.yml`
-2. `arq` in `requirements.txt`, Worker-Entrypoint `python -m app.worker`
-3. Tabelle `generation_jobs` (status, user_id, project_id, slug, error)
-4. Planungs-Endpunkte auf async Job umstellen
-5. Frontend: Spinner + Status-Polling auf Planungsseite
+| Teil | Ort |
+|------|-----|
+| Redis | `docker-compose.yml` → `redis:6379` |
+| Worker | `docker compose` Service `worker` → `arq app.worker.WorkerSettings` |
+| Jobs-Tabelle | `generation_jobs` (Alembic `010`) |
+| API | `POST generate/*` → 202 wenn Redis erreichbar, sonst Sync-Fallback |
+| Status | `GET /api/v1/jobs/{job_id}` |
+| Realtime | Redis Pub/Sub `planning:updates` + WebSocket |
+
+## Konfiguration (`.env`)
+
+```env
+REDIS_URL=redis://redis:6379/0
+ARQ_ENABLED=true
+```
+
+Ohne Redis: API fällt auf synchronen Modus zurück (`arq_jobs_enabled()` → false).
+
+## Produktion (nginx)
+
+WebSocket braucht direkten Proxy zum API-Port — Next.js unterstützt kein WS-Upgrade. Siehe `doku/.../pm.santinel.li.conf` → `location /api/v1/ws/`.
 
 ## Multi-User
 
-Jeder Benutzer behält eigene KI-Wahl (`user_llm_preferences`). Der Worker liest die User-ID aus dem Job und nutzt `build_runtime_config(db, user)` — PII-Gate bleibt unverändert aktiv.
+Jeder Job speichert `user_id`. Der Worker nutzt `build_runtime_config(db, user)` — PII-Gate bleibt aktiv.

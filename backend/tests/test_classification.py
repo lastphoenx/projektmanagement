@@ -43,6 +43,17 @@ def test_gdpr_fields_for_user():
     assert any(f.field == "encrypted_profile" for f in fields)
 
 
+def test_field_registry_user_metadata_not_secret():
+    """User-Metadaten (id, Flags) sind INTERNAL, nicht SECRET vom Tabellen-Default."""
+    for field_name in ("id", "tenant_id", "totp_enabled", "is_admin", "is_active", "classification"):
+        entry = field_classification(
+            "User",
+            field_name,
+            table_default=DataClassification.SECRET,
+        )
+        assert entry.classification == DataClassification.INTERNAL, field_name
+
+
 def test_table_defaults_from_models():
     from app.core.crypto.table_defaults import discover_table_classification_defaults
     from app.core.db.session import Base
@@ -69,8 +80,8 @@ def test_table_defaults_from_models():
     assert by_model["UserSession"].default_classification == DataClassification.INTERNAL.name
     assert by_model["LoginChallenge"].default_classification == DataClassification.INTERNAL.name
 
-    # Alle 14 App-Tabellen mit classification-Spalte
-    assert len(by_model) == 14
+    # Alle 15 App-Tabellen mit classification-Spalte
+    assert len(by_model) == 15
 
     for cls in (
         Project,
