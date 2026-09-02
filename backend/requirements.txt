@@ -4,7 +4,7 @@ uvicorn[standard]==0.34.3
 sqlalchemy==2.0.41
 psycopg[binary]==3.2.9
 alembic==1.16.1
-pydantic-settings==2.9.1
+pydantic-settings==2.15.0
 pydantic[email]==2.12.5
 argon2-cffi==25.1.0
 # cryptography: nach pip install erzwingen (presidio-anonymizer pinnt <49, CVE-2026-69247)
