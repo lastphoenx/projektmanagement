@@ -45,6 +45,8 @@ Oder alles per Docker:
 docker compose up -d
 ```
 
+**UI-Leitplanken:** [frontend/DESIGN.md](frontend/DESIGN.md)
+
 ## Datenklassifizierung
 
 | Klasse | Wert | Verschlüsselung |

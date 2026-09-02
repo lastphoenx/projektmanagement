@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import {
   fetchAdminLlm,
   saveAdminLlm,
@@ -85,8 +86,8 @@ export default function AdminLlmPage() {
           <p className="text-muted-foreground">Lade…</p>
         ) : (
           <div className="space-y-6 rounded-2xl border border-border/70 bg-card/80 shadow-card p-6">
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            {message && <p className="text-sm text-emerald-700">{message}</p>}
+            {error && <InlineAlert className="mb-2">{error}</InlineAlert>}
+            {message && <InlineAlert variant="success" className="mb-2">{message}</InlineAlert>}
 
             <div className="space-y-2">
               <Label htmlFor="provider">Provider</Label>

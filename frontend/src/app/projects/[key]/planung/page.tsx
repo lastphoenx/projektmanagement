@@ -5,8 +5,6 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  CheckCircle2,
-  Circle,
   Loader2,
   Pencil,
   Save,
@@ -16,7 +14,10 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { PlanningDocumentPanel } from "@/components/planning/PlanningDocumentPanel";
+import { PlanningStepNav } from "@/components/planning/PlanningStepNav";
 import { Button } from "@/components/ui/button";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,13 +38,10 @@ import {
   type PspAnalysis,
 } from "@/lib/api";
 import {
-  PLANNING_FLOW_STEPS,
   PLANNING_IDEA,
-  STATUS_LABELS,
   type PlanningStepKey,
 } from "@/lib/planning-steps";
 import { WIZARD_PROJECT_TYPE_LABELS, type WizardProjectType } from "@/lib/project-types";
-import { cn } from "@/lib/utils";
 
 export default function PlanningPage() {
   const params = useParams();
@@ -64,6 +62,8 @@ export default function PlanningPage() {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
+  const [contentMode, setContentMode] = useState<"read" | "edit">("read");
+  const [showPreview, setShowPreview] = useState(false);
 
   const load = useCallback(async () => {
     if (!projectKey) return;
@@ -115,6 +115,11 @@ export default function PlanningPage() {
     const artifact = planning.artifacts.find((a) => a.slug === activeStep);
     setDraftContent(artifact?.content ?? "");
   }, [activeStep, planning]);
+
+  useEffect(() => {
+    setContentMode("read");
+    setShowPreview(false);
+  }, [activeStep]);
 
   function stepFilled(key: PlanningStepKey): boolean {
     if (!planning) return false;
@@ -398,177 +403,125 @@ export default function PlanningPage() {
           </div>
         </div>
 
-        {error && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-4">
-            {error}
-          </p>
-        )}
+        {error && <InlineAlert className="mb-4">{error}</InlineAlert>}
 
         <div className="grid lg:grid-cols-[280px_1fr] gap-6">
-          <aside className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-3 h-fit lg:sticky lg:top-20">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-2">
-              Planungsschritte
-            </p>
-            <nav className="space-y-1">
-              {PLANNING_FLOW_STEPS.map((step) => {
-                const filled = stepFilled(step.key);
-                const status = stepStatus(step.key);
-                const Icon = step.icon;
-                return (
-                  <button
-                    key={step.key}
-                    type="button"
-                    onClick={() => setActiveStep(step.key)}
-                    className={cn(
-                      "w-full flex items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                      activeStep === step.key
-                        ? "bg-primary/10 text-primary"
-                        : "hover:bg-muted/60"
-                    )}
-                  >
-                    <Icon className="w-4 h-4 mt-0.5 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {step.displayNumber}. {step.shortLabel}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {STATUS_LABELS[status] ?? status}
-                      </p>
-                    </div>
-                    {filled ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
+          <PlanningStepNav
+            activeStep={activeStep}
+            onSelect={setActiveStep}
+            stepFilled={stepFilled}
+            stepStatus={stepStatus}
+          />
 
-          <section className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-5 sm:p-6">
-            <div className="mb-4">
-              <h2 className="font-display text-xl font-semibold">
-                {activeMeta.displayNumber}. {activeMeta.label}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">{activeMeta.description}</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Bearbeiten
-                </label>
-                <textarea
-                  value={draftContent}
-                  onChange={(e) => setDraftContent(e.target.value)}
-                  rows={18}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder={
-                    activeStep === PLANNING_IDEA.key
-                      ? "Beschreibe die Projektidee…"
-                      : "Markdown-Inhalt…"
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Vorschau
-                </label>
-                <div className="rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm min-h-[22.5rem] max-h-[22.5rem] overflow-auto whitespace-pre-wrap">
-                  {draftContent.trim() ? draftContent : (
-                    <span className="text-muted-foreground">Noch kein Inhalt.</span>
+          <div className="space-y-4">
+            <PlanningDocumentPanel
+              title={`${activeMeta.displayNumber}. ${activeMeta.label}`}
+              description={activeMeta.description}
+              status={activeStep === PLANNING_IDEA.key ? undefined : stepStatus(activeStep)}
+              content={
+                activeStep === PLANNING_IDEA.key
+                  ? planning?.project_idea ?? ""
+                  : planning?.artifacts.find((a) => a.slug === activeStep)?.content ?? ""
+              }
+              draftContent={draftContent}
+              onDraftChange={setDraftContent}
+              contentMode={contentMode}
+              onContentModeChange={setContentMode}
+              showPreview={showPreview}
+              onShowPreviewChange={setShowPreview}
+              placeholder={
+                activeStep === PLANNING_IDEA.key
+                  ? "Beschreibe die Projektidee…"
+                  : "Markdown-Inhalt…"
+              }
+            >
+              {activeStep === "psp" && (
+                <div className="mb-6 rounded-xl border border-border/70 bg-muted/20 p-4 space-y-4">
+                  <h3 className="font-display text-base font-semibold">Budgetauswertung (Phase 5)</h3>
+                  {budgetLoading && !pspAnalysis ? (
+                    <p className="text-sm text-muted-foreground">Auswertung läuft…</p>
+                  ) : pspAnalysis ? (
+                    <>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Arbeitspakete</p>
+                          <p className="font-medium">{pspAnalysis.work_package_count}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Personentage</p>
+                          <p className="font-medium">{pspAnalysis.total_pt} PT</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Geschätzt gesamt</p>
+                          <p className="font-medium">
+                            CHF {pspAnalysis.estimated_total_chf.toLocaleString("de-CH")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Status</p>
+                          <p className="font-medium">{pspAnalysis.status}</p>
+                        </div>
+                      </div>
+                      {pspAnalysis.fits_ceiling === false && (
+                        <InlineAlert variant="info">
+                          Budgetdeckel überschritten um CHF{" "}
+                          {pspAnalysis.deviation_chf?.toLocaleString("de-CH")} (
+                          {pspAnalysis.deviation_pct}%)
+                        </InlineAlert>
+                      )}
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="budgetCeiling">Budgetdeckel (CHF)</Label>
+                          <Input
+                            id="budgetCeiling"
+                            type="number"
+                            min={0}
+                            value={budgetCeiling}
+                            onChange={(e) => setBudgetCeiling(e.target.value)}
+                            placeholder="z. B. 120000"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="budgetNotes">Notizen</Label>
+                          <Input
+                            id="budgetNotes"
+                            value={budgetNotes}
+                            onChange={(e) => setBudgetNotes(e.target.value)}
+                            placeholder="Optional"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={budgetLoading}
+                          onClick={onSaveBudgetBasis}
+                        >
+                          Budgetbasis speichern
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={budgetLoading}
+                          onClick={onConfirmBudgetBasis}
+                        >
+                          Budgetbasis bestätigen
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      PSP-Tabelle mit AP-IDs und PT ausfüllen, dann erscheint die Auswertung.
+                    </p>
                   )}
                 </div>
-              </div>
-            </div>
+              )}
+            </PlanningDocumentPanel>
 
-            {activeStep === "psp" && (
-              <div className="mb-6 rounded-xl border border-border/70 bg-muted/20 p-4 space-y-4">
-                <h3 className="font-display text-base font-semibold">Budgetauswertung (Phase 5)</h3>
-                {budgetLoading && !pspAnalysis ? (
-                  <p className="text-sm text-muted-foreground">Auswertung läuft…</p>
-                ) : pspAnalysis ? (
-                  <>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Arbeitspakete</p>
-                        <p className="font-medium">{pspAnalysis.work_package_count}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Personentage</p>
-                        <p className="font-medium">{pspAnalysis.total_pt} PT</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Geschätzt gesamt</p>
-                        <p className="font-medium">
-                          CHF {pspAnalysis.estimated_total_chf.toLocaleString("de-CH")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Status</p>
-                        <p className="font-medium">{pspAnalysis.status}</p>
-                      </div>
-                    </div>
-                    {pspAnalysis.fits_ceiling === false && (
-                      <p className="text-sm text-amber-700">
-                        Budgetdeckel überschritten um CHF{" "}
-                        {pspAnalysis.deviation_chf?.toLocaleString("de-CH")} (
-                        {pspAnalysis.deviation_pct}%)
-                      </p>
-                    )}
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="budgetCeiling">Budgetdeckel (CHF)</Label>
-                        <Input
-                          id="budgetCeiling"
-                          type="number"
-                          min={0}
-                          value={budgetCeiling}
-                          onChange={(e) => setBudgetCeiling(e.target.value)}
-                          placeholder="z. B. 120000"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="budgetNotes">Notizen</Label>
-                        <Input
-                          id="budgetNotes"
-                          value={budgetNotes}
-                          onChange={(e) => setBudgetNotes(e.target.value)}
-                          placeholder="Optional"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={budgetLoading}
-                        onClick={onSaveBudgetBasis}
-                      >
-                        Budgetbasis speichern
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={budgetLoading}
-                        onClick={onConfirmBudgetBasis}
-                      >
-                        Budgetbasis bestätigen
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    PSP-Tabelle mit AP-IDs und PT ausfüllen, dann erscheint die Auswertung.
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-4 flex flex-wrap items-center gap-2">
               <Button type="button" onClick={onSave} disabled={saving}>
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -630,7 +583,7 @@ export default function PlanningPage() {
                 </>
               )}
             </div>
-          </section>
+          </div>
         </div>
       </PageContainer>
     </AppLayout>

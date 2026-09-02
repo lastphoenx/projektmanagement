@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { fetchAdminSecurityCatalog, type SecurityCatalogState } from "@/lib/api";
 
 export default function AdminSecurityPage() {
@@ -23,7 +24,7 @@ export default function AdminSecurityPage() {
           title="Sicherheitskatalog"
           description="B.1 — Zwei-Ebenen-Modell: Schutzklassen-Katalog + Tabellen-Defaults + Feld-Overrides (nur Lesen)."
         />
-        {error && <p className="text-destructive text-sm mb-4">{error}</p>}
+        {error && <InlineAlert className="mb-4">{error}</InlineAlert>}
         {catalog && (
           <div className="space-y-8">
             <section className="rounded-xl border border-border/70 bg-muted/20 p-4 text-sm space-y-2">

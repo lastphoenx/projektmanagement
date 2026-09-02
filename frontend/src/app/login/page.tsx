@@ -3,6 +3,7 @@
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { APP_COPYRIGHT, APP_NAME } from "@/lib/appMeta";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { login, verify2fa } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,11 +93,7 @@ function LoginForm() {
                   autoComplete="current-password"
                 />
               </div>
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
+              {error && <InlineAlert>{error}</InlineAlert>}
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Anmelden…" : "Anmelden"}
               </Button>
@@ -115,11 +112,7 @@ function LoginForm() {
                 placeholder="123456"
                 autoComplete="one-time-code"
               />
-              {error && (
-                <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
-                  {error}
-                </p>
-              )}
+              {error && <InlineAlert>{error}</InlineAlert>}
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Prüfen…" : "Bestätigen"}
               </Button>
