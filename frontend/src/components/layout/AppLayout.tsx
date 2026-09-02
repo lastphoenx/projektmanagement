@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, FolderKanban, Shield, Sparkles } from "lucide-react";
+import { Activity, FolderKanban, LayoutGrid, Shield, Sparkles } from "lucide-react";
 import { LayoutShell } from "@/components/layout/PageContainer";
 import { APP_COPYRIGHT, APP_NAME, APP_VERSION_LABEL } from "@/lib/appMeta";
 import { fetchMe, logout, type User } from "@/lib/api";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 const baseNavigation = [
   { name: "Projekte", href: "/projects", icon: FolderKanban },
+  { name: "Portfolio", href: "/portfolio", icon: LayoutGrid },
   { name: "Status", href: "/", icon: Activity },
 ];
 

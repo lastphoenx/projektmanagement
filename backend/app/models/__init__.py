@@ -7,8 +7,10 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Index,
+    Integer,
     LargeBinary,
     SmallInteger,
     String,
@@ -161,6 +163,9 @@ class Project(Base, TimestampMixin):
     planning_framework: Mapped["PlanningFramework | None"] = relationship(
         back_populates="project", uselist=False
     )
+    portfolio_entry: Mapped["PortfolioProject | None"] = relationship(
+        back_populates="project", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class PlanningFramework(Base, TimestampMixin):
@@ -205,6 +210,73 @@ class PlanningArtifact(Base, TimestampMixin):
     )
 
     framework: Mapped["PlanningFramework"] = relationship(back_populates="artifacts")
+
+
+class PortfolioProject(Base, TimestampMixin):
+    """Portfolio-Eintrag (1:1 mit Projekt) inkl. WSJF-Scoring."""
+
+    __tablename__ = "portfolio_projects"
+    __table_args__ = (
+        Index("ix_portfolio_projects_tenant_display", "tenant_id", "display_number", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), unique=True, nullable=False
+    )
+    display_number: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    sponsor: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    business_unit: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    objective_1: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    objective_2: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    objective_3: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    strategic_alignment_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    nonfinancial_benefit_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    customer_impact_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    feasibility_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    complexity_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cybersecurity_risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    compliance_criticality: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    data_privacy_level: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    financial_npv: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    financial_roi_pct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    payback_months: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cost_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    time_criticality: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    risk_reduction_opportunity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    job_size: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    dependencies_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    duration_months: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    resource_demand_fte: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    strategic_importance: Mapped[float | None] = mapped_column(Float, nullable=True)
+    feasibility_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    value_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    wsjf: Mapped[float | None] = mapped_column(Float, nullable=True)
+    composite_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    tier: Mapped[str | None] = mapped_column(String(1), nullable=True)
+    matrix_quadrant: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
+
+    project: Mapped["Project"] = relationship(back_populates="portfolio_entry")
 
 
 class ProjectMember(Base, TimestampMixin):
