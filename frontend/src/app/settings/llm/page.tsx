@@ -164,6 +164,9 @@ export default function UserLlmSettingsPage() {
 
             <section className="rounded-2xl border border-border/70 bg-card/60 p-6 space-y-3">
               <h2 className="font-semibold">Modell-Empfehlungen</h2>
+              {state?.guidance.ollama_filter_note && (
+                <p className="text-xs text-muted-foreground">{state.guidance.ollama_filter_note}</p>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>

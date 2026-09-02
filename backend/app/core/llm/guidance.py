@@ -19,7 +19,8 @@ GUIDANCE = {
             ],
             "cons": [
                 "Qualität hängt vom lokalen Modell und der Hardware ab.",
-                "Muss vom Betreiber erreichbar gehalten werden.",
+                "Grosse Modelle (z. B. 70B) brauchen viel RAM/VRAM auf dem Ollama-Host.",
+                "Nur Chat-taugliche Modelle erscheinen in der Liste.",
             ],
         },
         {
@@ -48,23 +49,27 @@ GUIDANCE = {
     "model_hints": [
         {
             "use_case": "Schnelle Entwürfe (Idee, Stichpunkte)",
-            "ollama": "llama3.2, mistral",
+            "ollama": "llama3.2, llama3:8b",
             "openai": "gpt-4o-mini",
             "anthropic": "claude-3-5-haiku-latest",
         },
         {
             "use_case": "Ausformulierte Planungstexte",
-            "ollama": "llama3.1, qwen2.5",
+            "ollama": "llama3.3:70b, qwen2.5:32b",
             "openai": "gpt-4o",
-            "anthropic": "claude-sonnet-4-0",
+            "anthropic": "claude-3-5-sonnet-latest",
         },
         {
-            "use_case": "Tabellen/PSP-Struktur (Schritt 3)",
-            "ollama": "Modell mit guter Markdown-Treue testen",
-            "openai": "gpt-4o-mini",
-            "anthropic": "claude-sonnet-4-0",
+            "use_case": "Tabellen / PSP-Struktur (Schritt 3)",
+            "ollama": "llama3.3:70b, qwen2.5:32b",
+            "openai": "gpt-4.1-mini",
+            "anthropic": "claude-sonnet-4-20250514",
         },
     ],
+    "ollama_filter_note": (
+        "Embedding-, Vision- (…vl), Reranker- und reine Code-Modelle werden ausgeblendet — "
+        "sie eignen sich nicht für Planungs-Texte."
+    ),
     "privacy": {
         "title": "Datenschutz bei Cloud-KI",
         "rules": [

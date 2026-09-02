@@ -2,6 +2,11 @@
 
 from app import config
 from app.core.llm.errors import LLMError
+from app.core.llm.model_catalog import (
+    DEFAULT_MODELS,
+    filter_ollama_models,
+    pick_default_from_list,
+)
 from app.core.llm.ollama_client import fetch_ollama_models, ollama_reachable
 from app.core.llm.provider_catalog import PROVIDERS, STATIC_MODELS
 
@@ -12,6 +17,21 @@ def env_api_key(provider_id: str) -> str | None:
         return None
     value = getattr(config.settings, pdef.env_key_field, "") or ""
     return value.strip() or None
+
+
+def env_default_model(provider_id: str) -> str:
+    mapping = {
+        "ollama": config.settings.llm_model_ollama,
+        "openai": config.settings.llm_model_openai,
+        "anthropic": config.settings.llm_model_anthropic,
+    }
+    specific = (mapping.get(provider_id) or "").strip()
+    if specific:
+        return specific
+    legacy = (config.settings.llm_model or "").strip()
+    if legacy and (config.settings.llm_provider or "ollama") == provider_id:
+        return legacy
+    return ""
 
 
 def resolve_base_url(provider_id: str) -> str | None:
@@ -40,7 +60,7 @@ def models_for_provider(provider_id: str) -> list[str]:
         if not base:
             return []
         try:
-            return fetch_ollama_models(base)
+            return filter_ollama_models(fetch_ollama_models(base))
         except LLMError:
             return []
     return list(STATIC_MODELS.get(provider_id, []))
@@ -64,10 +84,9 @@ def list_providers_for_ui() -> list[dict]:
 
 def default_model_for_provider(provider_id: str) -> str:
     models = models_for_provider(provider_id)
+    env_default = env_default_model(provider_id)
     if models:
-        return models[0]
-    if provider_id == "openai":
-        return "gpt-4o-mini"
-    if provider_id == "anthropic":
-        return "claude-3-5-haiku-latest"
-    return config.settings.llm_model or "llama3.2"
+        return pick_default_from_list(provider_id, models, env_default)
+    if env_default:
+        return env_default
+    return DEFAULT_MODELS.get(provider_id, "")
