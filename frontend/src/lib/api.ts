@@ -126,23 +126,38 @@ export type PspAnalysis = {
   fits_ceiling?: boolean;
 };
 
-export type AdminLlmProvider = {
+export type UserLlmProvider = {
   id: string;
   label: string;
   is_local: boolean;
   configured: boolean;
-  base_url: string | null;
   models: string[];
 };
 
+export type UserLlmGuidance = {
+  controls: { title: string; items: string[] };
+  providers: { id: string; pros: string[]; cons: string[] }[];
+  model_hints: {
+    use_case: string;
+    ollama: string;
+    openai: string;
+    anthropic: string;
+  }[];
+  privacy: { title: string; rules: string[]; note: string };
+};
+
+export type UserLlmState = {
+  providers: UserLlmProvider[];
+  active: { provider: string; model: string; source: string };
+  guidance: UserLlmGuidance;
+};
+
+export type AdminLlmProvider = UserLlmProvider;
+
 export type AdminLlmState = {
   providers: AdminLlmProvider[];
-  active: {
-    provider: string;
-    model: string;
-    base_url: string | null;
-    source: string;
-  };
+  env_defaults: { provider: string; model: string };
+  note: string;
 };
 
 export type SecurityCatalogEntry = {
@@ -302,14 +317,17 @@ export const confirmBudgetBasis = (projectKey: string, expectedRevision: number)
     `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/budget-basis/confirm`,
     { method: "POST", json: { expected_revision: expectedRevision } }
   );
+export const fetchUserLlm = () => apiFetch<UserLlmState>("/api/v1/settings/llm");
+export const saveUserLlm = (data: { provider: string; model: string }) =>
+  apiFetch<UserLlmState>("/api/v1/settings/llm", { method: "PUT", json: data });
+export const testUserLlm = (data: { provider: string; model: string }) =>
+  apiFetch<{ ok: boolean; message: string }>("/api/v1/settings/llm/test", {
+    method: "POST",
+    json: data,
+  });
+
 export const fetchAdminLlm = () => apiFetch<AdminLlmState>("/api/v1/admin/llm");
-export const saveAdminLlm = (data: {
-  provider: string;
-  model: string;
-  base_url?: string;
-  api_key?: string;
-}) => apiFetch<AdminLlmState>("/api/v1/admin/llm", { method: "PUT", json: data });
-export const testAdminLlm = (data: { provider: string; model: string; base_url?: string }) =>
+export const testAdminLlm = (data: { provider: string; model: string }) =>
   apiFetch<{ ok: boolean; message: string }>("/api/v1/admin/llm/test", {
     method: "POST",
     json: data,
