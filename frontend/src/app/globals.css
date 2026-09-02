@@ -134,6 +134,28 @@
     @apply shadow-card border-border/80 transition-shadow hover:shadow-card-hover;
   }
 
+  .planning-step-icon-pending {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .planning-step-icon-done {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+
+  .planning-read-panel {
+    @apply rounded-xl border border-border/70 bg-muted/20 px-4 py-4 min-h-[12rem] max-h-[32rem] overflow-auto;
+  }
+
+  .planning-preview-panel {
+    @apply rounded-xl border border-border/70 bg-muted/30 px-4 py-3 text-sm min-h-[22rem] max-h-[32rem] overflow-auto;
+  }
+
+  .planning-editor-field {
+    @apply rounded-xl border-2 border-primary/30 bg-white shadow-sm px-4 py-3 text-sm font-mono leading-relaxed;
+    @apply ring-2 ring-inset ring-primary/10;
+    @apply focus-visible:outline-none focus-visible:border-primary focus-visible:ring-primary/25;
+  }
+
   [data-ui-theme="km"] .stat-card {
     position: relative;
     overflow: hidden;

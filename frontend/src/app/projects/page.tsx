@@ -7,6 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { fetchMe, fetchProjects, deleteProject, type Project, type User } from "@/lib/api";
 import { WIZARD_PROJECT_TYPE_LABELS, type WizardProjectType } from "@/lib/project-types";
 import { cn } from "@/lib/utils";
@@ -84,11 +85,7 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {error && user && (
-          <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-6">
-            {error}
-          </p>
-        )}
+        {error && user && <InlineAlert className="mb-6">{error}</InlineAlert>}
 
         {loading ? (
           <p className="text-center text-muted-foreground py-12">Lade Projekte…</p>
