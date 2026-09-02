@@ -233,6 +233,12 @@ export type SecurityCatalogState = {
     note?: string;
   }[];
   catalog_version: string;
+  portfolio_metadata_notes?: {
+    field: string;
+    model: string;
+    purpose: string;
+    note: string;
+  }[];
   concept: {
     level_1: string;
     level_2: string;

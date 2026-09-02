@@ -102,7 +102,24 @@ def get_security_catalog_state() -> dict:
         "table_defaults": table_defaults,
         "field_registry_overrides": fields,
         "planning_step_fields": planning_steps,
-        "catalog_version": "B.1",
+        "portfolio_metadata_notes": [
+            {
+                "field": "data_privacy_level",
+                "model": "PortfolioProject",
+                "purpose": "business_label",
+                "note": (
+                    "WSJF-Fragebogen-Label (Public/Internal/Confidential) — fachliche Einschätzung, "
+                    "nicht identisch mit der technischen classification-Spalte (Smallint, Crypto/Retention/LLM)."
+                ),
+            },
+            {
+                "field": "compliance_criticality",
+                "model": "PortfolioProject",
+                "purpose": "business_label",
+                "note": "Fachliches Compliance-Rating für Scoring — kein Ersatz für classification.",
+            },
+        ],
+        "catalog_version": "B.2",
         "concept": {
             "level_1": "Schutzklassen-Katalog — Regeln pro Klasse (Retention, DSGVO, LLM, Löschung)",
             "level_2": "Tabellen-Default aus SQLAlchemy-Model (classification-Spalte, introspectiert)",

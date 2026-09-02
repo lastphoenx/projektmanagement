@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.auth.passwords import hash_email, hash_password
 from app.core.crypto.classification_catalog import get_policy
 from app.core.crypto.classification import DataClassification
-from app.models import AuditLog, ProjectMember, RecoveryCode, User, UserSession
+from app.models import AuditLog, LoginChallenge, ProjectMember, RecoveryCode, User, UserLlmPreference, UserSession
 from app.services.audit import log_event
 
 
@@ -42,6 +42,14 @@ def erase_user_data(db: Session, actor: User, target_user_id: uuid.UUID) -> dict
 
     # Recovery-Codes entfernen
     db.query(RecoveryCode).filter(RecoveryCode.user_id == user.id).delete(synchronize_session=False)
+
+    # 2FA-Challenges entfernen
+    db.query(LoginChallenge).filter(LoginChallenge.user_id == user.id).delete(synchronize_session=False)
+
+    # KI-Präferenzen entfernen
+    db.query(UserLlmPreference).filter(UserLlmPreference.user_id == user.id).delete(
+        synchronize_session=False
+    )
 
     # Projekt-Mitgliedschaften entfernen
     db.query(ProjectMember).filter(ProjectMember.user_id == user.id).delete(synchronize_session=False)

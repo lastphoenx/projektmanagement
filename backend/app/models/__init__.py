@@ -95,6 +95,9 @@ class UserSession(Base, TimestampMixin):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
 
     user: Mapped["User"] = relationship(back_populates="sessions")
 
@@ -110,6 +113,9 @@ class RecoveryCode(Base):
     )
     code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -129,6 +135,9 @@ class LoginChallenge(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -234,14 +243,14 @@ class PortfolioProject(Base, TimestampMixin):
     )
     display_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    sponsor: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    name_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    sponsor_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    objective_1_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    objective_2_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    objective_3_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
     business_unit: Mapped[str | None] = mapped_column(String(100), nullable=True)
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
-
-    objective_1: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    objective_2: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    objective_3: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     strategic_alignment_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     nonfinancial_benefit_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -252,12 +261,10 @@ class PortfolioProject(Base, TimestampMixin):
     cybersecurity_risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     compliance_criticality: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Business-Label im WSJF-Formular (Public/Internal/Confidential) — nicht die technische classification-Spalte
     data_privacy_level: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
-    financial_npv: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    financial_roi_pct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    payback_months: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    cost_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    financial_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
 
     time_criticality: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     risk_reduction_opportunity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -298,6 +305,9 @@ class ProjectMember(Base, TimestampMixin):
         PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
 
     project: Mapped["Project"] = relationship(back_populates="members")
 
@@ -356,6 +366,9 @@ class UserLlmPreference(Base, TimestampMixin):
     )
     provider: Mapped[str] = mapped_column(String(32), nullable=False, default="ollama")
     model: Mapped[str] = mapped_column(String(128), nullable=False, default="llama3.2")
+    classification: Mapped[int] = mapped_column(
+        SmallInteger, default=DataClassification.INTERNAL, nullable=False
+    )
 
     user: Mapped["User"] = relationship(back_populates="llm_preference")
 
