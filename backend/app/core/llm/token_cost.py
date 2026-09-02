@@ -13,7 +13,7 @@ MODEL_PRICING_USD: dict[str, tuple[float, float]] = {
     "claude-haiku-4-5": (1.00, 5.00),
     "claude-3-5-haiku": (0.80, 4.00),
     "claude-sonnet-5": (2.00, 10.00),
-    "claude-3-5-sonnet": (3.00, 15.00),
+    "claude-sonnet-4-6": (3.00, 15.00),
     "claude-sonnet-4-20250514": (3.00, 15.00),
 }
 
