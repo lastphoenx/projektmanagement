@@ -42,4 +42,9 @@ if ! curl -fsS "http://127.0.0.1:3000/api/v1/health"; then
 fi
 echo ""
 
+if [[ "${PII_PREFETCH_ON_DEPLOY:-0}" == "1" ]]; then
+  echo "==> PII-Modelle vorladen (Flair; kann einige Minuten dauern)"
+  docker compose exec -T api python scripts/prefetch_pii_models.py
+fi
+
 echo "==> Fertig."
