@@ -17,6 +17,7 @@ class LlmRuntimeConfig:
     api_key: str | None
     model: str
     is_local: bool
+    extra_headers: dict[str, str] | None = None
 
 
 @dataclass(frozen=True, slots=True)
