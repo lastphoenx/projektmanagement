@@ -38,6 +38,7 @@ import {
   type PspAnalysis,
 } from "@/lib/api";
 import {
+  PLANNING_FLOW_STEPS,
   PLANNING_IDEA,
   type PlanningStepKey,
 } from "@/lib/planning-steps";
