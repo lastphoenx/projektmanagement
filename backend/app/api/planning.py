@@ -18,6 +18,7 @@ from app.schemas import (
     SetArtifactStatusRequest,
 )
 from app.services.planning_generation_service import generate_artifact, generate_project_idea
+from app.services.budget_plan_generate_service import generate_budgetplan_from_psp
 from app.services.jira_csv_generate_service import generate_jira_csv_from_psp
 from app.services.psp_budget_service import analyze_psp_budget, confirm_budget_basis, update_budget_basis
 from app.services.planning_service import (
@@ -197,6 +198,25 @@ def planning_generate_jira_csv(
     project = _project(db, user, project_key)
     try:
         result = generate_jira_csv_from_psp(
+            db, user, project, expected_revision=body.expected_revision
+        )
+        db.commit()
+        return result
+    except PlanningError as exc:
+        db.rollback()
+        raise _planning_http_error(exc) from exc
+
+
+@planning_router.post("/generate/budget-plan", response_model=PlanningStateResponse)
+def planning_generate_budget_plan(
+    project_key: str,
+    body: GenerateArtifactRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        result = generate_budgetplan_from_psp(
             db, user, project, expected_revision=body.expected_revision
         )
         db.commit()
