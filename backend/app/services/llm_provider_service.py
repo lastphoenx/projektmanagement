@@ -9,6 +9,7 @@ from app.core.llm.model_catalog import (
 )
 from app.core.llm.ollama_client import fetch_ollama_models, ollama_reachable
 from app.core.llm.provider_catalog import PROVIDERS, STATIC_MODELS
+from app.core.llm.types import LlmRuntimeConfig
 
 
 def env_api_key(provider_id: str) -> str | None:
@@ -80,6 +81,35 @@ def list_providers_for_ui() -> list[dict]:
             }
         )
     return out
+
+
+def provider_extra_headers(provider_id: str) -> dict[str, str]:
+    """Zusätzliche HTTP-Header pro Provider (z. B. Anthropic Workspace für identity-linked Keys)."""
+    if provider_id != "anthropic":
+        return {}
+    workspace_id = (config.settings.anthropic_workspace_id or "").strip()
+    if not workspace_id:
+        return {}
+    return {"anthropic-workspace-id": workspace_id}
+
+
+def make_runtime_config(
+    *,
+    provider: str,
+    model: str,
+    base_url: str | None,
+    api_key: str | None,
+    is_local: bool,
+) -> LlmRuntimeConfig:
+    headers = provider_extra_headers(provider)
+    return LlmRuntimeConfig(
+        provider=provider,
+        base_url=base_url,
+        api_key=api_key,
+        model=model,
+        is_local=is_local,
+        extra_headers=headers or None,
+    )
 
 
 def default_model_for_provider(provider_id: str) -> str:

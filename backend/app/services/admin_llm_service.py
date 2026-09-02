@@ -7,10 +7,12 @@ from app.core.crypto.classification import DataClassification
 from app.core.llm import generate_text
 from app.core.llm.errors import LLMError
 from app.core.llm.provider_catalog import OPENAI_COMPAT_PROVIDERS
+from app.core.llm.types import LlmRequest
 from app.models import User
 from app.services.llm_provider_service import (
     env_api_key,
     list_providers_for_ui,
+    make_runtime_config,
     models_for_provider,
     provider_is_configured,
     resolve_base_url,
@@ -59,7 +61,7 @@ def test_admin_llm_connection(
     if provider not in OPENAI_COMPAT_PROVIDERS:
         return {"ok": False, "message": "Verbindungstest für diesen Provider noch nicht implementiert"}
 
-    runtime = LlmRuntimeConfig(
+    runtime = make_runtime_config(
         provider=provider,
         base_url=resolve_base_url(provider),
         api_key=env_api_key(provider),

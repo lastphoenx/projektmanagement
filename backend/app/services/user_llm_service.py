@@ -14,6 +14,7 @@ from app.services.llm_provider_service import (
     default_model_for_provider,
     env_api_key,
     list_providers_for_ui,
+    make_runtime_config,
     models_for_provider,
     provider_is_configured,
     resolve_base_url,
@@ -116,7 +117,7 @@ def build_runtime_config(db: Session, user: User) -> LlmRuntimeConfig:
     if pdef.is_local and base:
         base = f"{base.rstrip('/')}/v1"
 
-    return LlmRuntimeConfig(
+    return make_runtime_config(
         provider=provider,
         base_url=base,
         api_key=api_key or "ollama",
@@ -138,7 +139,7 @@ def test_user_llm_connection(db: Session, user: User, *, provider: str, model: s
         models = models_for_provider(provider)
         return {"ok": True, "message": f"Ollama erreichbar — {len(models)} Modell(e)", "models": models}
 
-    runtime = LlmRuntimeConfig(
+    runtime = make_runtime_config(
         provider=provider,
         base_url=resolve_base_url(provider),
         api_key=env_api_key(provider),
