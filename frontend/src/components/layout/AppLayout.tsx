@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Activity, FolderKanban, LayoutGrid, Shield, Sparkles } from "lucide-react";
+import { Activity, FolderKanban, LayoutGrid, Shield, ShieldCheck, Sparkles } from "lucide-react";
 import { LayoutShell } from "@/components/layout/PageContainer";
 import { APP_COPYRIGHT, APP_NAME, APP_VERSION_LABEL } from "@/lib/appMeta";
 import { fetchMe, logout, type User } from "@/lib/api";
@@ -18,6 +18,7 @@ const baseNavigation = [
 const adminNavigation = [
   { name: "KI-Einstellungen", href: "/admin/llm", icon: Sparkles },
   { name: "Sicherheit", href: "/admin/security", icon: Shield },
+  { name: "Datenschutz", href: "/admin/privacy", icon: ShieldCheck },
 ];
 
 interface AppLayoutProps {

@@ -114,9 +114,11 @@ export default function PlanningPage() {
             </PlanningDocumentPanel>
 
             <PlanningActionBar
+              projectKey={projectKey}
               activeStep={vm.activeStep}
               saving={vm.saving}
               generating={vm.generating}
+              hasContent={Boolean(vm.savedContent?.trim())}
               onSave={() => void vm.persistContent()}
               onGenerateKi={() => void vm.generateKi()}
               onGenerateFromPsp={() => void vm.generateFromPsp()}

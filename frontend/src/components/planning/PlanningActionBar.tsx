@@ -1,29 +1,36 @@
 "use client";
 
-import { Loader2, Save, Sparkles, Table } from "lucide-react";
+import { FileDown, Loader2, Save, Sparkles, Table } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { planningArtifactExportDocxUrl } from "@/lib/api";
 import { PLANNING_IDEA, type PlanningStepKey } from "@/lib/planning-steps";
 import { canGenerateFromPsp, canGenerateKi } from "@/lib/planning-capabilities";
 
 export function PlanningActionBar({
+  projectKey,
   activeStep,
   saving,
   generating,
+  hasContent,
   onSave,
   onGenerateKi,
   onGenerateFromPsp,
   onSetDraft,
   onSetApproved,
 }: {
+  projectKey: string;
   activeStep: PlanningStepKey;
   saving: boolean;
   generating: boolean;
+  hasContent: boolean;
   onSave: () => void;
   onGenerateKi: () => void;
   onGenerateFromPsp: () => void;
   onSetDraft: () => void;
   onSetApproved: () => void;
 }) {
+  const canExportStep = activeStep !== PLANNING_IDEA.key && hasContent;
+
   return (
     <div className="rounded-2xl border border-border/70 bg-card/80 shadow-card p-4 flex flex-wrap items-center gap-2">
       <Button type="button" onClick={onSave} disabled={saving}>
@@ -50,6 +57,18 @@ export function PlanningActionBar({
         >
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Mit KI generieren
+        </Button>
+      )}
+      {canExportStep && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() =>
+            window.open(planningArtifactExportDocxUrl(projectKey, activeStep), "_blank")
+          }
+        >
+          <FileDown className="w-4 h-4" />
+          Word (.docx)
         </Button>
       )}
       {activeStep !== PLANNING_IDEA.key && (

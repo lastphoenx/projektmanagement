@@ -7,14 +7,16 @@ from app.api.planning import planning_router
 from app.api.portfolio import portfolio_router
 from app.api.routes import auth_router, projects_router
 from app.config import settings
+from app.core.security.rate_limit import RateLimitMiddleware
 
 app = FastAPI(
     title="Projektmanagement API",
-    version="0.5.0",
+    version="0.6.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
 
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

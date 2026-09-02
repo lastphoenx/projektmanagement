@@ -39,6 +39,15 @@ FIELD_REGISTRY: dict[tuple[str, str], FieldClassification] = {
     ("User", "encrypted_profile"): FieldClassification(
         "User", "encrypted_profile", DataClassification.SECRET, gdpr_personal=True
     ),
+    ("User", "email_hash"): FieldClassification(
+        "User", "email_hash", DataClassification.SECRET, gdpr_personal=True
+    ),
+    ("AuditLog", "actor_id"): FieldClassification(
+        "AuditLog", "actor_id", DataClassification.INTERNAL, gdpr_personal=True
+    ),
+    ("AuditLog", "detail"): FieldClassification(
+        "AuditLog", "detail", DataClassification.INTERNAL, gdpr_personal=True
+    ),
 }
 
 
