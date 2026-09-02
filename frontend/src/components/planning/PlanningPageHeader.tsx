@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowLeft, Loader2, Pencil, Save, X } from "lucide-react";
+import { Loader2, Pencil, Save, X } from "lucide-react";
+import { BackLink } from "@/components/layout/BackLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Project } from "@/lib/api";
@@ -31,13 +31,7 @@ export function PlanningPageHeader({
 }) {
   return (
     <div className="mb-6">
-      <Link
-        href="/projects"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors mb-3"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Projekte
-      </Link>
+      <BackLink href="/projects">Projekte</BackLink>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-mono text-muted-foreground mb-1">{projectKey}</p>
