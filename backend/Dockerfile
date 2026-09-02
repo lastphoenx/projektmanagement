@@ -8,8 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
+# presidio-anonymizer pinnt cryptography<49; CVE-Fix per force-reinstall auf 50.x
 RUN pip install --no-cache-dir -r requirements.txt \
-    --override 'cryptography>=50.0.0,<51' \
+    && pip install --no-cache-dir --force-reinstall 'cryptography>=50.0.0,<51' \
     && python -m spacy download de_core_news_lg
 
 COPY alembic.ini .
