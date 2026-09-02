@@ -5,7 +5,7 @@ sqlalchemy==2.0.41
 psycopg[binary]==3.2.9
 alembic==1.16.1
 pydantic-settings==2.9.1
-pydantic[email]==2.11.7
+pydantic[email]==2.12.5
 argon2-cffi==25.1.0
 cryptography==50.0.0
 python-multipart==0.0.32
