@@ -144,6 +144,7 @@ export type UserLlmGuidance = {
     anthropic: string;
   }[];
   privacy: { title: string; rules: string[]; note: string };
+  ollama_filter_note?: string;
 };
 
 export type UserLlmState = {

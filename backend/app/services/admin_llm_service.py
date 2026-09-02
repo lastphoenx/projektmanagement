@@ -6,7 +6,7 @@ from app import config
 from app.core.crypto.classification import DataClassification
 from app.core.llm import generate_text
 from app.core.llm.errors import LLMError
-from app.core.llm.types import LlmRequest, LlmRuntimeConfig
+from app.core.llm.provider_catalog import OPENAI_COMPAT_PROVIDERS
 from app.models import User
 from app.services.llm_provider_service import (
     env_api_key,
@@ -56,7 +56,7 @@ def test_admin_llm_connection(
         models = models_for_provider(provider)
         return {"ok": True, "message": f"Ollama erreichbar — {len(models)} Modell(e)", "models": models}
 
-    if provider not in ("openai",):
+    if provider not in OPENAI_COMPAT_PROVIDERS:
         return {"ok": False, "message": "Verbindungstest für diesen Provider noch nicht implementiert"}
 
     runtime = LlmRuntimeConfig(

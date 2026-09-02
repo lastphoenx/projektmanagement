@@ -26,6 +26,10 @@ bash "$SCRIPT_DIR/fix-docker-ipv4.sh"
 
 echo "==> Build & start"
 export DOCKER_BUILDKIT=1
+if [[ "${DOCKER_PRUNE_BUILDER:-1}" == "1" ]]; then
+  echo "==> Docker Build-Cache leeren (API-Image mit PyTorch; DOCKER_PRUNE_BUILDER=0 zum Überspringen)"
+  docker builder prune -af >/dev/null 2>&1 || true
+fi
 docker compose build
 docker compose up -d
 

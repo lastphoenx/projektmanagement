@@ -37,9 +37,13 @@ PROVIDERS: dict[str, ProviderDefinition] = {
 }
 
 STATIC_MODELS: dict[str, list[str]] = {
-    "openai": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
-    "anthropic": ["claude-sonnet-4-0", "claude-3-5-haiku-latest"],
-    "ollama": [],  # live von /api/tags
+    "openai": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4o"],
+    "anthropic": [
+        "claude-3-5-haiku-latest",
+        "claude-3-5-sonnet-latest",
+        "claude-sonnet-4-20250514",
+    ],
+    "ollama": [],  # live von /api/tags, gefiltert in model_catalog
 }
 
-OPENAI_COMPAT_PROVIDERS = frozenset({"ollama", "openai"})
+OPENAI_COMPAT_PROVIDERS = frozenset({"ollama", "openai", "anthropic"})

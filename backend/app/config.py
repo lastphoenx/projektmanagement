@@ -33,7 +33,10 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     llm_provider: str = "ollama"
-    llm_model: str = ""
+    llm_model: str = ""  # Legacy-Fallback für alle Provider
+    llm_model_ollama: str = ""
+    llm_model_openai: str = ""
+    llm_model_anthropic: str = ""
     llm_base_url: str = ""
     llm_api_key_fallback: str = ""
 
