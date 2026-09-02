@@ -7,7 +7,7 @@ alembic==1.16.1
 pydantic-settings==2.9.1
 pydantic[email]==2.12.5
 argon2-cffi==25.1.0
-cryptography==48.0.1  # presidio-anonymizer requires >=48.0.1,<49
+cryptography>=50.0.0,<51  # CVE-2026-69247; presidio pin <49 — override in Dockerfile
 python-multipart==0.0.32
 pyotp==2.10.0
 
