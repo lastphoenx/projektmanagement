@@ -62,13 +62,17 @@ docker compose up -d
 - [x] Planungskern: Idee + 10 Artefakte (PostgreSQL, verschlüsselt)
 - [x] Planungs-UI: Sidebar, Markdown-Editor, Vorschau, Status
 - [x] Klassifizierungs-Katalog + Feld-Registry (Code-Mapping, B.1)
-- [x] KI für Idee + Schritte 1–3 (Phase 4c, sync — `core/llm/` + PII-Gate-Stub)
-- [x] Admin-UI: KI-Einstellungen (`/admin/llm`), Sicherheitskatalog (`/admin/security`)
-- [x] PSP-Budgetauswertung Schritt 3 (Phase 5, Basis)
-- [ ] Celery für lange KI-Jobs (optional, später)
-- [ ] Jira-CSV, Budgetplan Schritte 7–8 (Phase 5)
+- [x] KI für Idee + Schritte 1–3 (sync — `core/llm/` + `core/anonymization/pii_gate.py`)
+- [x] Admin-UI: KI-Einstellungen (`/admin/llm`), Sicherheitskatalog (`/admin/security`), DSGVO (`/admin/privacy`)
+- [x] PSP-Budgetauswertung Schritt 3
+- [x] Jira-CSV + Budgetplan aus PSP (Schritte 7–8, Generierung in Planung)
+- [x] DOCX-Export (Gesamtplanung + einzelne Artefakte)
+- [x] Portfolio-MVP (`/portfolio`, WSJF-Matrix, CRUD)
+- [x] API-Router aufgeteilt (`auth`, `projects`, `tasks`, `planning`, `portfolio`, `admin`)
+- [ ] Hintergrund-Jobs für lange KI-Generierung (Celery/ARQ o. ä. — siehe unten)
+- [ ] WebSocket Live-Updates (optional, Phase 4+)
 
-### Planungs-API
+### Planungs-API (Auszug)
 
 | Methode | Pfad | Beschreibung |
 |---------|------|--------------|
@@ -77,8 +81,18 @@ docker compose up -d
 | PUT | `.../planning/idea` | Projektidee speichern |
 | PUT | `.../planning/artifacts/{slug}` | Artefakt speichern |
 | PATCH | `.../planning/artifacts/{slug}/status` | Status setzen |
+| POST | `.../planning/generate/idea` | KI Projektidee |
+| POST | `.../planning/generate/artifacts/{slug}` | KI Artefakt |
+| POST | `.../planning/pii-analyze` | PII-Vorschau vor Cloud-Versand |
+| GET | `.../planning/export-docx` | Gesamtplanung als DOCX |
+| POST | `.../planning/generate/jira-csv` | Jira-CSV aus PSP |
+| POST | `.../planning/generate/budgetplan` | Budgetplan aus PSP |
 
-Migration: `cd backend && alembic upgrade head` (Revision `004`)
+Migration: `cd backend && alembic upgrade head`
+
+### Hintergrund-Jobs (geplant)
+
+Lange KI-Läufe laufen heute **synchron** im API-Worker (ein Request blockiert bis fertig). Für mehrere gleichzeitige Nutzer: Job-Queue (z. B. **Celery** + Redis, oder leichter **ARQ** / **RQ**) mit Status-Polling oder WebSocket — noch nicht implementiert.
 
 ## Phase 3
 
