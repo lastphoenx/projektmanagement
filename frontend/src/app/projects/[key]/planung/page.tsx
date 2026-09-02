@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { PlanningCompletionBanner } from "@/components/planning/PlanningCompletionBanner";
 import { PlanningDocumentPanel } from "@/components/planning/PlanningDocumentPanel";
 import { PlanningStepNav } from "@/components/planning/PlanningStepNav";
 import { Button } from "@/components/ui/button";
@@ -405,16 +406,12 @@ export default function PlanningPage() {
                 <p className="text-sm text-muted-foreground mt-1">{typeLabel}</p>
               )}
             </div>
-            {planning && (
-              <div className="rounded-xl border border-border/70 bg-card/80 px-4 py-2 text-sm">
-                <span className="text-muted-foreground">Fortschritt: </span>
-                <span className="font-medium">
-                  {planning.completion.filled_count}/{planning.completion.total_count}
-                </span>
-              </div>
-            )}
           </div>
         </div>
+
+        {planning && (
+          <PlanningCompletionBanner completion={planning.completion} className="mb-4" />
+        )}
 
         {error && <InlineAlert className="mb-4">{error}</InlineAlert>}
 
@@ -424,6 +421,8 @@ export default function PlanningPage() {
             onSelect={setActiveStep}
             stepFilled={stepFilled}
             stepStatus={stepStatus}
+            filledCount={planning?.completion.filled_count}
+            totalCount={planning?.completion.total_count}
           />
 
           <div className="space-y-4">

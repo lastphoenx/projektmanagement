@@ -117,13 +117,24 @@ class PlanningArtifactResponse(BaseModel):
     has_content: bool
 
 
+class PlanningCompletionStepResponse(BaseModel):
+    key: str
+    label: str
+    filled: bool
+    status: str
+
+
 class PlanningCompletionResponse(BaseModel):
     has_project_idea: bool
     filled_count: int
     total_count: int
     artifact_filled: int
     artifact_total: int
+    approved_count: int
     is_complete: bool
+    is_fully_approved: bool
+    missing_labels: list[str]
+    steps: list[PlanningCompletionStepResponse]
 
 
 class PlanningStateResponse(BaseModel):
