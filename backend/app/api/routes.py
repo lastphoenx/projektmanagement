@@ -15,6 +15,12 @@ from app.core.auth.sessions import (
     set_session_cookie,
 )
 from app.core.db import get_db
+from app.core.security.login_protection import (
+    check_login_allowed,
+    get_client_ip,
+    record_login_failure,
+    record_login_success,
+)
 from app.models import User
 from app.schemas import (
     LoginRequest,
@@ -100,8 +106,13 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 @auth_router.post("/login", response_model=LoginResponse)
 def login(body: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    ip = get_client_ip(request)
+    blocked = check_login_allowed(ip, body.email)
+    if blocked:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=blocked)
     try:
         user = authenticate_password(db, body.email, body.password)
+        record_login_success(body.email)
         if user.totp_enabled:
             challenge = start_2fa_challenge(db, user)
             db.commit()
@@ -109,6 +120,7 @@ def login(body: LoginRequest, request: Request, response: Response, db: Session 
             return LoginResponse(requires_2fa=True)
         return _finish_login(db, user, response, request)
     except AuthError as exc:
+        record_login_failure(ip, body.email)
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=exc.message) from exc
 
@@ -123,6 +135,10 @@ def verify_2fa(
 ):
     if not body.totp_code and not body.recovery_code:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code erforderlich")
+    ip = get_client_ip(request)
+    blocked = check_login_allowed(ip, "2fa-verify")
+    if blocked:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=blocked)
     try:
         user = complete_2fa_login(
             db,
@@ -130,8 +146,10 @@ def verify_2fa(
             totp_code=body.totp_code,
             recovery_code=body.recovery_code,
         )
+        record_login_success("2fa-verify")
         return _finish_login(db, user, response, request)
     except AuthError as exc:
+        record_login_failure(ip, "2fa-verify")
         db.rollback()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=exc.message) from exc
 

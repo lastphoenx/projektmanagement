@@ -1,9 +1,10 @@
 "use client";
 
-import { Loader2, Pencil, Save, X } from "lucide-react";
+import { Loader2, Pencil, Save, X, FileDown } from "lucide-react";
 import { BackLink } from "@/components/layout/BackLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { planningExportDocxUrl } from "@/lib/api";
 import type { Project } from "@/lib/api";
 
 export function PlanningPageHeader({
@@ -77,6 +78,15 @@ export function PlanningPageHeader({
           )}
           {typeLabel && <p className="text-sm text-muted-foreground mt-1">{typeLabel}</p>}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(planningExportDocxUrl(projectKey), "_blank")}
+        >
+          <FileDown className="w-4 h-4" />
+          Gesamtexport Word
+        </Button>
       </div>
     </div>
   );

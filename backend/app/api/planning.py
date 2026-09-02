@@ -1,8 +1,11 @@
 """Planungs-API (Projekt-Key-basiert)."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.core.anonymization.pii_gate import PIIGateError, analyze_text
 from app.core.auth.dependencies import get_current_user
 from app.core.db import get_db
 from app.core.llm.errors import LLMError
@@ -27,6 +30,10 @@ from app.services.planning_service import (
     save_artifact,
     save_project_idea,
     set_artifact_status,
+)
+from app.services.planning_docx_export_service import (
+    export_artifact_docx_bytes,
+    export_planning_docx_bytes,
 )
 from app.services.project_service import ProjectError, get_project_entity_by_key
 
@@ -279,4 +286,66 @@ def planning_budget_basis_confirm(
         return result
     except PlanningError as exc:
         db.rollback()
+        raise _planning_http_error(exc) from exc
+
+
+class PiiAnalyzeRequest(BaseModel):
+    text: str = Field(..., max_length=200_000)
+
+
+@planning_router.post("/pii-analyze")
+def planning_pii_analyze(
+    project_key: str,
+    body: PiiAnalyzeRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _project(db, user, project_key)
+    try:
+        findings = analyze_text(body.text)
+        return {
+            "findings_count": len(findings),
+            "findings": [
+                {"entity_type": f.entity_type, "text": f.text, "score": f.score}
+                for f in findings
+            ],
+        }
+    except PIIGateError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=exc.message) from exc
+
+
+@planning_router.get("/export-docx")
+def planning_export_docx(
+    project_key: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        data, filename = export_planning_docx_bytes(db, user, project)
+        return Response(
+            content=data,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except PlanningError as exc:
+        raise _planning_http_error(exc) from exc
+
+
+@planning_router.get("/artifacts/{slug}/export-docx")
+def planning_artifact_export_docx(
+    project_key: str,
+    slug: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    project = _project(db, user, project_key)
+    try:
+        data, filename = export_artifact_docx_bytes(db, user, project, slug)
+        return Response(
+            content=data,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except PlanningError as exc:
         raise _planning_http_error(exc) from exc

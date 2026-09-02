@@ -385,3 +385,46 @@ export const updatePortfolioProject = (
 
 export const deletePortfolioProject = (id: string) =>
   apiFetch<void>(`/api/v1/portfolio/projects/${id}`, { method: "DELETE" });
+
+export function planningExportDocxUrl(projectKey: string): string {
+  return `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/export-docx`;
+}
+
+export function planningArtifactExportDocxUrl(projectKey: string, slug: string): string {
+  return `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/artifacts/${encodeURIComponent(slug)}/export-docx`;
+}
+
+export type PiiFinding = { entity_type: string; text: string; score: number };
+
+export const analyzePlanningPii = (projectKey: string, text: string) =>
+  apiFetch<{ findings_count: number; findings: PiiFinding[] }>(
+    `/api/v1/projects/by-key/${encodeURIComponent(projectKey)}/planning/pii-analyze`,
+    { method: "POST", json: { text } }
+  );
+
+export type PrivacyUserSummary = {
+  id: string;
+  is_active: boolean;
+  is_admin: boolean;
+  totp_enabled: boolean;
+  created_at: string;
+};
+
+export const fetchAdminPrivacyUsers = () =>
+  apiFetch<PrivacyUserSummary[]>("/api/v1/admin/privacy/users");
+
+export function adminPrivacyExportUrl(userId: string): string {
+  return `/api/v1/admin/privacy/users/${userId}/export`;
+}
+
+export const adminPrivacyErase = (userId: string) =>
+  apiFetch<{ erased_user_id: string; strategy: string; audit_events_pseudonymized: number }>(
+    `/api/v1/admin/privacy/users/${userId}/erase`,
+    { method: "POST" }
+  );
+
+export const adminPrivacyPurgeRetention = () =>
+  apiFetch<{ purged: { sessions: number; audit_log: number } }>(
+    "/api/v1/admin/privacy/retention/purge",
+    { method: "POST" }
+  );

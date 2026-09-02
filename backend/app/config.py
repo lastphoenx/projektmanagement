@@ -37,6 +37,18 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key_fallback: str = ""
 
+    # B.3 Rate-Limiting (togglebar; CrowdSec-Vorbereitung)
+    rate_limit_enabled: bool = True
+    api_rate_limit_per_minute: int = 120
+    login_max_failures_per_user: int = 5
+    login_lockout_seconds: int = 900
+    login_max_attempts_per_ip: int = 30
+    login_ip_window_seconds: int = 300
+
+    # PII-Gate (swiss-pii-anonymizer)
+    pii_anonymizer_enabled: bool = True
+    pii_anonymizer_required: bool = False
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
