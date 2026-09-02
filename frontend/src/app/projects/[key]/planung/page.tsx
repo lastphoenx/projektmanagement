@@ -70,6 +70,11 @@ export default function PlanningPage() {
         )}
 
         {vm.error && <InlineAlert className="mb-4">{vm.error}</InlineAlert>}
+        {vm.llmMessage && (
+          <InlineAlert variant="success" className="mb-4">
+            {vm.llmMessage}
+          </InlineAlert>
+        )}
 
         <div className="grid lg:grid-cols-[280px_1fr] gap-6">
           <PlanningStepNav

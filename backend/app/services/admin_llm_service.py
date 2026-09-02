@@ -76,4 +76,4 @@ def test_admin_llm_connection(
         ),
         data_classification=DataClassification.PUBLIC,
     )
-    return {"ok": True, "message": f"Antwort: {reply[:80]}"}
+    return {"ok": True, "message": f"Antwort: {reply.text[:80]}"}

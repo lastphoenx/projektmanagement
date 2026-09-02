@@ -1,12 +1,12 @@
-"""OpenAI-kompatibler Chat-Adapter (OpenAI, Ollama, lokale Proxies)."""
+"""OpenAI-kompatibler Chat-Adapter (OpenAI, Ollama, Anthropic)."""
 
 from openai import OpenAI
 
 from app.core.llm.errors import LLMError
-from app.core.llm.types import LlmRequest, LlmRuntimeConfig
+from app.core.llm.types import LlmRequest, LlmResult, LlmRuntimeConfig
 
 
-def generate(config: LlmRuntimeConfig, request: LlmRequest) -> str:
+def generate(config: LlmRuntimeConfig, request: LlmRequest) -> LlmResult:
     if not config.api_key and not config.is_local:
         raise LLMError("LLM API-Key fehlt", "missing_api_key")
 
@@ -29,4 +29,10 @@ def generate(config: LlmRuntimeConfig, request: LlmRequest) -> str:
     content = response.choices[0].message.content
     if not content:
         raise LLMError("Leere LLM-Antwort", "empty_response")
-    return content.strip()
+
+    usage = response.usage
+    return LlmResult(
+        text=content.strip(),
+        input_tokens=usage.prompt_tokens if usage else None,
+        output_tokens=usage.completion_tokens if usage else None,
+    )

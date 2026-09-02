@@ -109,6 +109,19 @@ export type PlanningState = {
   budget_basis: Record<string, unknown>;
   artifacts: PlanningArtifact[];
   completion: PlanningCompletion;
+  llm_usage?: LlmUsage | null;
+};
+
+export type LlmUsage = {
+  provider: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  estimated_cost_usd: number | null;
+  estimated_cost_usd_display: string | null;
+  is_local: boolean;
+  billing_scope: string;
 };
 
 export type PspAnalysis = {
@@ -151,6 +164,22 @@ export type UserLlmState = {
   providers: UserLlmProvider[];
   active: { provider: string; model: string; source: string };
   guidance: UserLlmGuidance;
+  billing_note: BillingNote;
+  pricing_catalog: PricingCatalogRow[];
+  typical_planning_tokens: Record<string, { input: number; output: number }>;
+};
+
+export type BillingNote = {
+  title: string;
+  paragraphs: string[];
+  products: { name: string; covers: string; not_covers: string }[];
+};
+
+export type PricingCatalogRow = {
+  model: string;
+  input_usd_per_mtok: number;
+  output_usd_per_mtok: number;
+  example_idea_usd: number;
 };
 
 export type AdminLlmProvider = UserLlmProvider;

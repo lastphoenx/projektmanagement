@@ -43,21 +43,19 @@ OLLAMA_PREFERRED_ORDER: tuple[str, ...] = (
 )
 
 STATIC_MODELS: dict[str, list[str]] = {
-    # gpt-4o-mini: schnell/günstig; gpt-4o: Qualität; gpt-4.1-mini: neuerer Kompakt-Typ
-    "openai": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4o"],
-    # Haiku: Entwürfe; Sonnet 3.5/4: lange Planungstexte
+    "openai": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1", "gpt-4o"],
     "anthropic": [
-        "claude-3-5-haiku-latest",
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5",
         "claude-3-5-sonnet-latest",
-        "claude-sonnet-4-20250514",
     ],
     "ollama": [],
 }
 
 DEFAULT_MODELS: dict[str, str] = {
     "ollama": "llama3.3:70b",
-    "openai": "gpt-4o-mini",
-    "anthropic": "claude-3-5-haiku-latest",
+    "openai": "gpt-4.1-mini",
+    "anthropic": "claude-haiku-4-5-20251001",
 }
 
 

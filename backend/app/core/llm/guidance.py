@@ -49,21 +49,21 @@ GUIDANCE = {
     "model_hints": [
         {
             "use_case": "Schnelle Entwürfe (Idee, Stichpunkte)",
-            "ollama": "llama3.2, llama3:8b",
-            "openai": "gpt-4o-mini",
-            "anthropic": "claude-3-5-haiku-latest",
+            "ollama": "llama3.3:70b, llama3:8b",
+            "openai": "gpt-4o-mini, gpt-4.1-mini",
+            "anthropic": "claude-haiku-4-5",
         },
         {
             "use_case": "Ausformulierte Planungstexte",
             "ollama": "llama3.3:70b, qwen2.5:32b",
-            "openai": "gpt-4o",
-            "anthropic": "claude-3-5-sonnet-latest",
+            "openai": "gpt-4.1",
+            "anthropic": "claude-sonnet-5",
         },
         {
             "use_case": "Tabellen / PSP-Struktur (Schritt 3)",
             "ollama": "llama3.3:70b, qwen2.5:32b",
             "openai": "gpt-4.1-mini",
-            "anthropic": "claude-sonnet-4-20250514",
+            "anthropic": "claude-sonnet-5",
         },
     ],
     "ollama_filter_note": (
