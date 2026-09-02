@@ -35,6 +35,11 @@ def test_ki_generatable_includes_steps_4_to_6():
     assert "projektplan" in KI_GENERATABLE_ARTIFACTS
 
 
+def test_ki_generatable_includes_steps_9_and_10():
+    assert "einsatzmittelplan" in KI_GENERATABLE_ARTIFACTS
+    assert "risikobetrachtung" in KI_GENERATABLE_ARTIFACTS
+
+
 def test_build_previous_context_includes_all_prior_artifacts():
     ctx = _build_previous_context(_artifacts("zielplanung", "projektbeschrieb"), "psp")
     assert "Zielplanung" in ctx

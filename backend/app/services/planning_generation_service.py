@@ -1,4 +1,4 @@
-"""KI-Generierung für Planungsschritte (Idee + Schritte 1–6)."""
+"""KI-Generierung für Planungsschritte (Idee + Schritte 1–6, 9–10)."""
 
 from sqlalchemy.orm import Session
 
@@ -107,7 +107,46 @@ Pflicht-Inhalte:
 3. Meilensteinplan
 4. Ressourcenübersicht nach Wochen
 5. Kritische Termine und Eskalationspunkte""",
+    "einsatzmittelplan": """Erstelle einen **realistischen Einsatzmittelplan (Ressourcenplan)** für folgendes Projekt.
+
+Projektidee:
+{idea}
+
+{context}
+
+Pflicht-Abschnitte (Markdown):
+1. Kurzanalyse (Projekttyp, Laufzeit, Meeting-Rhythmus)
+2. Rollenübersicht: Rolle | Profil | Verantwortlichkeiten | Gesamt-PT
+3. Durchlaufende PM-/Koordinationsleistung (Tabelle)
+4. Personalbedarfsmatrix nach Projektphase
+5. Ressourcenzuweisung pro Arbeitspaket (AP-ID aus PSP)
+6. Externe Ressourcen (nur wenn im Projekt vorgesehen)
+7. RACI-Matrix für Hauptphasen
+8. Ressourcenauslastung — übernimm die deterministische Tabelle unten UNVERÄNDERT
+9. Ressourcenkonflikte und Massnahmen
+
+Alle Rollen und PT müssen zum PSP und Budgetplan passen — nichts erfinden.""",
+    "risikobetrachtung": """Erstelle eine vollständige **Risikobetrachtung** (Schritt 10) für folgendes Projekt.
+
+Leite alle Risiken **ausschliesslich** aus den Planungsdokumenten 1–9 ab — nichts erfinden.
+
+Projektidee:
+{idea}
+
+{context}
+
+Pflicht-Inhalte:
+1. Einleitung (Methodik, Skala 1–5)
+2. Risikoregister-Tabelle: ID | Risiko | Kategorie | Ursache | W | A | Score | Massnahme | Verantwortlich | Status
+   — mind. 8–12 konkrete Projektrisiken
+3. Top-5-Risiken mit Begründung (Quelle: welches Dokument)
+4. Risikomatrix (Zusammenfassung)
+5. Contingency-Empfehlung (% vom Budget, begründet)
+6. Überwachungs- und Eskalationsplan""",
 }
+
+_EINSATZMITTEL_SOURCE_SLUGS = ARTIFACT_ORDER[:8]
+_RISIKO_SOURCE_SLUGS = ARTIFACT_ORDER[:9]
 
 # Lineare Voraussetzung je KI-Schritt (unmittelbarer Vorgänger in ARTIFACT_ORDER)
 _KI_PREREQUISITES: dict[str, str | None] = {
@@ -117,10 +156,14 @@ _KI_PREREQUISITES: dict[str, str | None] = {
     "pflichtenheft": "psp",
     "netzplan": "pflichtenheft",
     "projektplan": "netzplan",
+    "einsatzmittelplan": "budgetplan",
+    "risikobetrachtung": "einsatzmittelplan",
 }
 
 _MAX_TOKENS: dict[str, int] = {
     "pflichtenheft": 6500,
+    "einsatzmittelplan": 5000,
+    "risikobetrachtung": 5000,
 }
 
 
@@ -157,15 +200,33 @@ def _budget_context_for_pflichtenheft(artifacts: list[dict]) -> str:
     )
 
 
+def _count_filled(artifacts: list[dict], slugs: list[str]) -> int:
+    return sum(
+        1
+        for slug in slugs
+        if (item := _artifact_by_slug(artifacts, slug)) and item.get("has_content")
+    )
+
+
 def _require_prerequisite(artifacts: list[dict], slug: str) -> None:
     prereq = _KI_PREREQUISITES.get(slug)
-    if not prereq:
-        return
-    item = _artifact_by_slug(artifacts, prereq)
-    if not item or not item.get("has_content"):
-        label = ARTIFACT_LABELS.get(prereq, prereq)
+    if prereq:
+        item = _artifact_by_slug(artifacts, prereq)
+        if not item or not item.get("has_content"):
+            label = ARTIFACT_LABELS.get(prereq, prereq)
+            raise PlanningError(
+                f"Zuerst Schritt «{label}» ausfüllen oder generieren",
+                "missing_prerequisite",
+            )
+
+    if slug == "einsatzmittelplan" and _count_filled(artifacts, _EINSATZMITTEL_SOURCE_SLUGS) < 2:
         raise PlanningError(
-            f"Zuerst Schritt «{label}» ausfüllen oder generieren",
+            "Für den Einsatzmittelplan werden mindestens 2 befüllte Planungsschritte 1–8 benötigt",
+            "missing_prerequisite",
+        )
+    if slug == "risikobetrachtung" and _count_filled(artifacts, _RISIKO_SOURCE_SLUGS) < 2:
+        raise PlanningError(
+            "Für die Risikobetrachtung werden mindestens 2 befüllte Planungsschritte 1–9 benötigt",
             "missing_prerequisite",
         )
 
@@ -244,6 +305,24 @@ def generate_artifact(
     else:
         user_prompt = template.format(idea=idea, context=context)
 
+    determ_table = ""
+    if slug == "einsatzmittelplan":
+        psp_item = _artifact_by_slug(state["artifacts"], "psp")
+        psp_content = (psp_item.get("content") or "") if psp_item else ""
+        try:
+            from app.services.resource_utilization_service import build_resource_utilization_table
+
+            determ_table = build_resource_utilization_table(
+                psp_content, title=project.key
+            )
+            user_prompt += (
+                "\n\n---\n\n## Deterministisch berechnete Ressourcenauslastung (aus PSP)\n\n"
+                "**WICHTIG: Die folgende Tabelle ist KORREKT — in Abschnitt 8 UNVERÄNDERT übernehmen.**\n\n"
+                f"{determ_table}"
+            )
+        except ValueError:
+            pass
+
     config = get_runtime_config(db, user)
     content = generate_text(
         config,
@@ -255,6 +334,9 @@ def generate_artifact(
         ),
         data_classification=DataClassification.CONFIDENTIAL,
     )
+
+    if slug == "einsatzmittelplan" and determ_table and "Ressourcenauslastung" not in (content or ""):
+        content = (content or "").rstrip() + "\n\n---\n\n" + determ_table
 
     artifact = next(a for a in state["artifacts"] if a["slug"] == slug)
     result = save_artifact(
