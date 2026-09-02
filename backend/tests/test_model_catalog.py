@@ -1,6 +1,26 @@
 """Tests für Ollama-Modellfilter."""
 
-from app.core.llm.model_catalog import filter_ollama_models, is_ollama_planning_model, pick_default_from_list
+from app.core.llm.model_catalog import (
+    STATIC_MODELS,
+    filter_ollama_models,
+    is_ollama_planning_model,
+    pick_default_from_list,
+)
+from app.core.llm.providers.openai_compat import _anthropic_omits_sampling
+
+
+def test_anthropic_static_models_use_valid_api_ids():
+    models = STATIC_MODELS["anthropic"]
+    assert "claude-3-5-sonnet-latest" not in models
+    assert "claude-haiku-4-5-20251001" in models
+    assert "claude-sonnet-5" in models
+    assert "claude-sonnet-4-6" in models
+
+
+def test_anthropic_sampling_omission_for_sonnet_5():
+    assert _anthropic_omits_sampling("claude-sonnet-5")
+    assert not _anthropic_omits_sampling("claude-haiku-4-5-20251001")
+    assert not _anthropic_omits_sampling("claude-sonnet-4-6")
 
 
 def test_excludes_embedding_and_vision_models():

@@ -47,7 +47,7 @@ STATIC_MODELS: dict[str, list[str]] = {
     "anthropic": [
         "claude-haiku-4-5-20251001",
         "claude-sonnet-5",
-        "claude-3-5-sonnet-latest",
+        "claude-sonnet-4-6",
     ],
     "ollama": [],
 }
