@@ -1,7 +1,7 @@
 """Planungs-API (Projekt-Key-basiert)."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from app.core.anonymization.pii_gate import PIIGateError, analyze_text
 from app.core.auth.dependencies import get_current_user
 from app.core.db import get_db
 from app.core.llm.errors import LLMError
+from app.core.realtime.planning_events import publish_planning_update
 from app.models import User
 from app.schemas import (
     BudgetBasisConfirmRequest,
@@ -21,6 +22,11 @@ from app.schemas import (
     SetArtifactStatusRequest,
 )
 from app.services.planning_generation_service import generate_artifact, generate_project_idea
+from app.services.generation_job_service import (
+    arq_jobs_enabled,
+    create_planning_job,
+    enqueue_planning_job,
+)
 from app.services.budget_plan_generate_service import generate_budgetplan_from_psp
 from app.services.jira_csv_generate_service import generate_jira_csv_from_psp
 from app.services.psp_budget_service import analyze_psp_budget, confirm_budget_basis, update_budget_basis
@@ -69,6 +75,70 @@ def _planning_http_error(exc: PlanningError | LLMError) -> HTTPException:
     return HTTPException(status_code=code, detail=exc.message)
 
 
+def _notify_planning_update(project_key: str, result: dict, source: str) -> None:
+    publish_planning_update(
+        project_key=project_key,
+        revision=result.get("revision"),
+        source=source,
+    )
+
+
+async def _enqueue_or_run_idea(db, user, project, body):
+    if arq_jobs_enabled():
+        job = create_planning_job(
+            db,
+            user,
+            project,
+            kind="planning_idea",
+            artifact_slug=None,
+            payload={"expected_revision": body.expected_revision, "seed": body.seed},
+        )
+        db.commit()
+        await enqueue_planning_job(job.id)
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={"job_id": str(job.id), "status": "pending"},
+        )
+    result = generate_project_idea(
+        db,
+        user,
+        project,
+        seed=body.seed,
+        expected_revision=body.expected_revision,
+    )
+    db.commit()
+    _notify_planning_update(project.key, result, "generate")
+    return result
+
+
+async def _enqueue_or_run_artifact(db, user, project, slug, body):
+    if arq_jobs_enabled():
+        job = create_planning_job(
+            db,
+            user,
+            project,
+            kind="planning_artifact",
+            artifact_slug=slug,
+            payload={"expected_revision": body.expected_revision, "slug": slug},
+        )
+        db.commit()
+        await enqueue_planning_job(job.id)
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={"job_id": str(job.id), "status": "pending"},
+        )
+    result = generate_artifact(
+        db,
+        user,
+        project,
+        slug=slug,
+        expected_revision=body.expected_revision,
+    )
+    db.commit()
+    _notify_planning_update(project.key, result, "generate")
+    return result
+
+
 @planning_router.get("", response_model=PlanningStateResponse)
 def planning_get(
     project_key: str,
@@ -99,6 +169,7 @@ def planning_save_idea(
             expected_revision=body.expected_revision,
         )
         db.commit()
+        _notify_planning_update(project_key, result, "save")
         return result
     except PlanningError as exc:
         db.rollback()
@@ -124,6 +195,7 @@ def planning_save_artifact(
             expected_version=body.expected_version,
         )
         db.commit()
+        _notify_planning_update(project_key, result, "save")
         return result
     except PlanningError as exc:
         db.rollback()
@@ -142,14 +214,15 @@ def planning_set_artifact_status(
     try:
         result = set_artifact_status(db, user, project, slug=slug, status=body.status)
         db.commit()
+        _notify_planning_update(project_key, result, "status")
         return result
     except PlanningError as exc:
         db.rollback()
         raise _planning_http_error(exc) from exc
 
 
-@planning_router.post("/generate/idea", response_model=PlanningStateResponse)
-def planning_generate_idea(
+@planning_router.post("/generate/idea")
+async def planning_generate_idea(
     project_key: str,
     body: GenerateIdeaRequest,
     user: User = Depends(get_current_user),
@@ -157,22 +230,14 @@ def planning_generate_idea(
 ):
     project = _project(db, user, project_key)
     try:
-        result = generate_project_idea(
-            db,
-            user,
-            project,
-            seed=body.seed,
-            expected_revision=body.expected_revision,
-        )
-        db.commit()
-        return result
+        return await _enqueue_or_run_idea(db, user, project, body)
     except (PlanningError, LLMError) as exc:
         db.rollback()
         raise _planning_http_error(exc) from exc
 
 
-@planning_router.post("/generate/artifacts/{slug}", response_model=PlanningStateResponse)
-def planning_generate_artifact(
+@planning_router.post("/generate/artifacts/{slug}")
+async def planning_generate_artifact(
     project_key: str,
     slug: str,
     body: GenerateArtifactRequest,
@@ -181,15 +246,7 @@ def planning_generate_artifact(
 ):
     project = _project(db, user, project_key)
     try:
-        result = generate_artifact(
-            db,
-            user,
-            project,
-            slug=slug,
-            expected_revision=body.expected_revision,
-        )
-        db.commit()
-        return result
+        return await _enqueue_or_run_artifact(db, user, project, slug, body)
     except (PlanningError, LLMError) as exc:
         db.rollback()
         raise _planning_http_error(exc) from exc
@@ -264,6 +321,8 @@ def planning_budget_basis_update(
             expected_revision=body.expected_revision,
         )
         db.commit()
+        if isinstance(result, dict) and "planning" in result:
+            _notify_planning_update(project_key, result["planning"], "save")
         return result
     except PlanningError as exc:
         db.rollback()
@@ -283,6 +342,7 @@ def planning_budget_basis_confirm(
             db, user, project, expected_revision=body.expected_revision
         )
         db.commit()
+        _notify_planning_update(project_key, result, "save")
         return result
     except PlanningError as exc:
         db.rollback()

@@ -21,3 +21,7 @@ python-docx==1.1.2
 
 # PII-Gate (optional lokal; auf Server mit Modell-Cache)
 swiss-pii-anonymizer @ git+https://github.com/lastphoenx/swiss-pii-anonymizer.git@main
+
+# ARQ + Redis (Hintergrund-KI, Live-Updates)
+arq==0.26.3
+redis==5.2.1
