@@ -204,7 +204,14 @@ export default function PlanningPage() {
 
   const canGenerateKi =
     activeStep === PLANNING_IDEA.key ||
-    ["zielplanung", "projektbeschrieb", "psp"].includes(activeStep);
+    [
+      "zielplanung",
+      "projektbeschrieb",
+      "psp",
+      "pflichtenheft",
+      "netzplan",
+      "projektplan",
+    ].includes(activeStep);
 
   const canGenerateFromPsp =
     activeStep === "jira_csv" || activeStep === "budgetplan";

@@ -34,8 +34,10 @@ ARTIFACT_ORDER: list[str] = [
 
 PLANNING_ARTIFACT_SLUGS = frozenset(ARTIFACT_ORDER)
 
-# Phase 4c: KI-Generierung (weitere Slugs folgen in späteren Phasen)
-KI_GENERATABLE_ARTIFACTS = frozenset({"zielplanung", "projektbeschrieb", "psp"})
+# Phase 4c + 5.3: KI-Generierung für Schritte 1–6
+KI_GENERATABLE_ARTIFACTS = frozenset(
+    {"zielplanung", "projektbeschrieb", "psp", "pflichtenheft", "netzplan", "projektplan"}
+)
 
 ARTIFACT_LABELS: dict[str, str] = {
     "zielplanung": "1. Zielplanung",

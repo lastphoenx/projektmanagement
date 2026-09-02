@@ -1,14 +1,19 @@
-"""KI-Generierung für Planungsschritte (Idee + Schritte 1–3)."""
+"""KI-Generierung für Planungsschritte (Idee + Schritte 1–6)."""
 
 from sqlalchemy.orm import Session
 
 from app.core.auth.rbac import ProjectRole, require_role
 from app.core.crypto.classification import DataClassification
-from app.core.llm import LLMError, generate_text
+from app.core.llm import generate_text
 from app.core.llm.types import LlmRequest
 from app.models import Project, User
 from app.services.llm_config_service import get_runtime_config
-from app.services.planning_constants import KI_GENERATABLE_ARTIFACTS, PROJECT_TYPE_LABELS
+from app.services.planning_constants import (
+    ARTIFACT_LABELS,
+    ARTIFACT_ORDER,
+    KI_GENERATABLE_ARTIFACTS,
+    PROJECT_TYPE_LABELS,
+)
 from app.services.planning_service import (
     PlanningError,
     ensure_planning_framework,
@@ -19,8 +24,8 @@ from app.services.planning_service import (
 
 PLANNING_SYSTEM_PROMPT = """Du bist ein erfahrener Schweizer Projektmanager (PMP, IPMA Level B).
 Erstelle professionelle Planungsdokumente auf Deutsch mit Markdown (##, Tabellen, Listen).
-Fakten aus der Projektidee haben Vorrang — nichts erfinden oder widersprechen.
-Antworte NUR mit dem Dokument — keine Präambel."""
+Fakten aus der Projektidee und vorherigen Planungsartefakten haben Vorrang — nichts erfinden.
+Schweizer Orthographie (ss, kein ß). Antworte NUR mit dem Dokument — keine Präambel."""
 
 _ARTIFACT_PROMPTS: dict[str, str] = {
     "zielplanung": """Erstelle eine vollständige **Zielplanung** für folgendes Projekt.
@@ -49,29 +54,120 @@ Bisherige Planung:
 {context}
 
 Markdown-Tabelle: AP-ID | Arbeitspaket | Verantwortlich | PT | Beschreibung.""",
+    "pflichtenheft": """Erstelle ein **gehaltvolles kurzes Pflichtenheft für das Projektsetup**.
+Zweck: Idee in prüfbare Anforderungen übersetzen — keine vollumfängliche Ausschreibung.
+
+Projektidee:
+{idea}
+
+{context}
+
+Recherche-Kontext:
+{research_context}
+
+{budget_context}
+
+Pflicht-Abschnitte (Markdown):
+1. Zweck und Nutzen
+2. Was dieses Projekt typischerweise tangiert (Fliesstext, Klärungsfragen)
+3. Ausgangslage, Zielbild, In/Out of Scope
+4. Stakeholder und Verantwortlichkeiten
+5. Funktionale Anforderungen (FA-001 …, 10–18 Stück mit Akzeptanzkriterium)
+6. Nichtfunktionale Anforderungen (NFA-001 …)
+7. Schnittstellen, Daten, Abhängigkeiten
+8. Rahmenbedingungen (Organisation, Betrieb, Compliance)
+9. Budget und Kostenrahmen (nur wie in Budget-Kontext vorgegeben)
+10. Offene Punkte und nächste Schritte""",
+    "netzplan": """Erstelle einen **Netzplan** (Aktivitätenliste mit Abhängigkeiten) für folgendes Projekt.
+
+Projektidee:
+{idea}
+
+{context}
+
+Pflicht-Inhalte:
+1. Einleitung (Methode)
+2. Aktivitätentabelle: ID | Aktivität | Dauer (Tage) | Frühster Start | Frühster Abschluss | Spätester Start | Spätester Abschluss | Puffer | Vorgänger
+3. Kritischer Pfad
+4. Meilensteine (mind. 5, relativ zu Projektstart)
+5. Gesamtprojektdauer in Arbeitstagen
+
+Stütze dich auf den PSP aus den vorherigen Artefakten.""",
+    "projektplan": """Erstelle einen **Projektplan (Gantt-Darstellung)** für folgendes Projekt.
+
+Projektidee:
+{idea}
+
+{context}
+
+Pflicht-Inhalte:
+1. Projektübersicht (Start, Ende, Gesamtdauer)
+2. Gantt-Tabelle: AP-ID | Arbeitspaket | Verantwortlich | Start (Woche) | Ende (Woche) | Dauer (Wochen) | Abhängigkeiten | Meilenstein
+   — alle Arbeitspakete aus dem PSP, mind. 20 Zeilen
+3. Meilensteinplan
+4. Ressourcenübersicht nach Wochen
+5. Kritische Termine und Eskalationspunkte""",
+}
+
+# Lineare Voraussetzung je KI-Schritt (unmittelbarer Vorgänger in ARTIFACT_ORDER)
+_KI_PREREQUISITES: dict[str, str | None] = {
+    "zielplanung": None,
+    "projektbeschrieb": "zielplanung",
+    "psp": "projektbeschrieb",
+    "pflichtenheft": "psp",
+    "netzplan": "pflichtenheft",
+    "projektplan": "netzplan",
+}
+
+_MAX_TOKENS: dict[str, int] = {
+    "pflichtenheft": 6500,
 }
 
 
-def _build_context(artifacts: list[dict], before_slug: str | None) -> str:
-    if not before_slug:
-        return ""
+def _artifact_by_slug(artifacts: list[dict], slug: str) -> dict | None:
+    return next((a for a in artifacts if a["slug"] == slug), None)
+
+
+def _build_previous_context(artifacts: list[dict], up_to_slug: str) -> str:
     parts: list[str] = []
-    for item in artifacts:
-        if item["slug"] == before_slug:
+    for slug in ARTIFACT_ORDER:
+        if slug == up_to_slug:
             break
-        if item.get("has_content") and item.get("content"):
-            parts.append(f"### {item['slug']}\n{item['content']}")
-    return "\n\n".join(parts)
+        item = _artifact_by_slug(artifacts, slug)
+        if item and item.get("has_content") and item.get("content"):
+            label = ARTIFACT_LABELS.get(slug, slug)
+            parts.append(f"### {label}\n{item['content']}")
+    if not parts:
+        return ""
+    joined = "\n\n---\n\n".join(parts)
+    return f"Bereits erstellte Planungsdokumente:\n\n{joined}"
 
 
-def _context_before(slug: str) -> str | None:
-    order = ["zielplanung", "projektbeschrieb", "psp"]
-    if slug not in order:
-        return None
-    idx = order.index(slug)
-    if idx == 0:
-        return None
-    return order[idx - 1]
+def _budget_context_for_pflichtenheft(artifacts: list[dict]) -> str:
+    budget = _artifact_by_slug(artifacts, "budgetplan")
+    content = (budget.get("content") or "").strip() if budget else ""
+    if content:
+        return (
+            "### Budgetplan Schritt 8 (verbindlich — Kapitel 9)\n\n"
+            f"{content[:10000]}\n"
+        )
+    return (
+        "_Noch kein Budgetplan vorhanden. Kostenrahmen nur qualitativ — "
+        "keine erfundenen CHF-Beträge. Hinweis: Zahlen folgen aus Budgetplan (Schritt 8)._"
+    )
+
+
+def _require_prerequisite(artifacts: list[dict], slug: str) -> None:
+    prereq = _KI_PREREQUISITES.get(slug)
+    if not prereq:
+        return
+    item = _artifact_by_slug(artifacts, prereq)
+    if not item or not item.get("has_content"):
+        label = ARTIFACT_LABELS.get(prereq, prereq)
+        raise PlanningError(
+            f"Zuerst Schritt «{label}» ausfüllen oder generieren",
+            "missing_prerequisite",
+        )
 
 
 def generate_project_idea(
@@ -131,24 +227,32 @@ def generate_artifact(
     if not idea:
         raise PlanningError("Zuerst Projektidee erfassen oder generieren", "missing_idea")
 
-    before = _context_before(slug)
-    if slug == "projektbeschrieb":
-        ziel = next((a for a in state["artifacts"] if a["slug"] == "zielplanung"), None)
-        if not ziel or not ziel["has_content"]:
-            raise PlanningError("Zuerst Schritt 1 (Zielplanung) ausfüllen oder generieren", "missing_prerequisite")
-    if slug == "psp":
-        beschr = next((a for a in state["artifacts"] if a["slug"] == "projektbeschrieb"), None)
-        if not beschr or not beschr["has_content"]:
-            raise PlanningError("Zuerst Schritt 2 (Projektbeschrieb) ausfüllen oder generieren", "missing_prerequisite")
+    _require_prerequisite(state["artifacts"], slug)
 
-    context = _build_context(state["artifacts"], before)
+    context = _build_previous_context(state["artifacts"], slug) or "(kein Vorgänger-Inhalt)"
     template = _ARTIFACT_PROMPTS[slug]
-    user_prompt = template.format(idea=idea, context=context or "(kein Vorgänger-Inhalt)")
+
+    if slug == "pflichtenheft":
+        user_prompt = template.format(
+            idea=idea,
+            context=context,
+            research_context=(
+                "_Keine externe Recherche — arbeite aus Idee und Planungsartefakten._"
+            ),
+            budget_context=_budget_context_for_pflichtenheft(state["artifacts"]),
+        )
+    else:
+        user_prompt = template.format(idea=idea, context=context)
 
     config = get_runtime_config(db, user)
     content = generate_text(
         config,
-        LlmRequest(system_prompt=PLANNING_SYSTEM_PROMPT, user_prompt=user_prompt, model=config.model),
+        LlmRequest(
+            system_prompt=PLANNING_SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            model=config.model,
+            max_tokens=_MAX_TOKENS.get(slug, 4096),
+        ),
         data_classification=DataClassification.CONFIDENTIAL,
     )
 
