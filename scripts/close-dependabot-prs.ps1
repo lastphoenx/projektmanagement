@@ -54,6 +54,46 @@ $closes = @(
     Number  = 24
     Comment = "Deferred: @types/node 26 matches a major Node bump; staying on current 22.x types."
   }
+  @{
+    Number  = 25
+    Comment = "Applied manually on main: pydantic-settings 2.15.0."
+  }
+  @{
+    Number  = 26
+    Comment = "Applied manually on main: psycopg 3.3.4."
+  }
+  @{
+    Number  = 27
+    Comment = "Applied manually on main: pydantic 2.13.5."
+  }
+  @{
+    Number  = 28
+    Comment = "Applied manually on main: uvicorn 0.52.3."
+  }
+  @{
+    Number  = 29
+    Comment = "Applied manually on main: alembic 1.19.1."
+  }
+  @{
+    Number  = 33
+    Comment = "Deferred: tailwind-merge 3.x is a major upgrade; staying on 2.x until a planned frontend bump."
+  }
+  @{
+    Number  = 34
+    Comment = "Deferred: Next.js 16 is a major upgrade; staying on Next 15 until a planned frontend bump."
+  }
+  @{
+    Number  = 35
+    Comment = "Deferred: Tailwind CSS 4 is a major upgrade; staying on 3.x until a planned frontend bump."
+  }
+  @{
+    Number  = 36
+    Comment = "Deferred: @types/node 26 matches a major Node bump; staying on current 22.x types."
+  }
+  @{
+    Number  = 37
+    Comment = "Deferred: lucide-react 1.x is a major upgrade; staying on 0.x until a planned frontend bump."
+  }
 )
 
 foreach ($item in $closes) {
