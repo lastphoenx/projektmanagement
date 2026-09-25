@@ -24,4 +24,4 @@ swiss-pii-anonymizer @ git+https://github.com/lastphoenx/swiss-pii-anonymizer.gi
 
 # ARQ + Redis (Hintergrund-KI, Live-Updates)
 arq==0.26.3
-redis==5.2.1
+redis==8.1.0
