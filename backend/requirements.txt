@@ -17,7 +17,7 @@ httpx==0.28.1
 openai==1.109.1
 
 # Export
-python-docx==1.1.2
+python-docx==1.2.0
 
 # PII-Gate (optional lokal; auf Server mit Modell-Cache)
 swiss-pii-anonymizer @ git+https://github.com/lastphoenx/swiss-pii-anonymizer.git@main
