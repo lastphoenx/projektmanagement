@@ -94,6 +94,42 @@ $closes = @(
     Number  = 37
     Comment = "Deferred: lucide-react 1.x is a major upgrade; staying on 0.x until a planned frontend bump."
   }
+  @{
+    Number  = 39
+    Comment = "Deferred: redis 8.x is a major upgrade; staying on redis 5.x with arq until tested."
+  }
+  @{
+    Number  = 40
+    Comment = "Applied manually on main: python-docx 1.2.0."
+  }
+  @{
+    Number  = 41
+    Comment = "Deferred: @types/node 26 matches a major Node bump; staying on current 22.x types."
+  }
+  @{
+    Number  = 42
+    Comment = "Applied manually on main: arq 0.28.0."
+  }
+  @{
+    Number  = 43
+    Comment = "Applied manually on main: psycopg 3.3.6."
+  }
+  @{
+    Number  = 44
+    Comment = "Deferred: lucide-react 1.x is a major upgrade; staying on 0.x until a planned frontend bump."
+  }
+  @{
+    Number  = 45
+    Comment = "Applied manually on main: alembic 1.20.0."
+  }
+  @{
+    Number  = 46
+    Comment = "Deferred: Next.js 16 is a major upgrade; staying on Next 15 until a planned frontend bump."
+  }
+  @{
+    Number  = 47
+    Comment = "Deferred: tailwind-merge 3.x is a major upgrade; staying on 2.x until a planned frontend bump."
+  }
 )
 
 foreach ($item in $closes) {

@@ -2,8 +2,8 @@ fastapi==0.141.1
 starlette==1.6.0
 uvicorn[standard]==0.52.3
 sqlalchemy==2.0.41
-psycopg[binary]==3.3.4
-alembic==1.19.1
+psycopg[binary]==3.3.6
+alembic==1.20.0
 pydantic-settings==2.15.0
 pydantic[email]==2.13.5
 argon2-cffi==25.1.0
@@ -17,11 +17,11 @@ httpx==0.28.1
 openai==1.109.1
 
 # Export
-python-docx==1.1.2
+python-docx==1.2.0
 
 # PII-Gate (optional lokal; auf Server mit Modell-Cache)
 swiss-pii-anonymizer @ git+https://github.com/lastphoenx/swiss-pii-anonymizer.git@main
 
 # ARQ + Redis (Hintergrund-KI, Live-Updates)
-arq==0.26.3
+arq==0.28.0
 redis==5.2.1
