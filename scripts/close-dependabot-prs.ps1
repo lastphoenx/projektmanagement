@@ -130,6 +130,14 @@ $closes = @(
     Number  = 47
     Comment = "Deferred: tailwind-merge 3.x is a major upgrade; staying on 2.x until a planned frontend bump."
   }
+  @{
+    Number  = 48
+    Comment = "Applied manually on main: uvicorn 0.53.0, sqlalchemy 2.0.54, redis 5.3.1 (backend-pip group)."
+  }
+  @{
+    Number  = 49
+    Comment = "Applied manually on main: lucide-react ^0.577.0 (frontend-npm group, still 0.x)."
+  }
 )
 
 foreach ($item in $closes) {

@@ -1,7 +1,7 @@
 fastapi==0.141.1
 starlette==1.6.0
-uvicorn[standard]==0.52.3
-sqlalchemy==2.0.41
+uvicorn[standard]==0.53.0
+sqlalchemy==2.0.54
 psycopg[binary]==3.3.6
 alembic==1.20.0
 pydantic-settings==2.15.0
@@ -24,4 +24,4 @@ swiss-pii-anonymizer @ git+https://github.com/lastphoenx/swiss-pii-anonymizer.gi
 
 # ARQ + Redis (Hintergrund-KI, Live-Updates)
 arq==0.28.0
-redis==5.2.1
+redis==5.3.1
