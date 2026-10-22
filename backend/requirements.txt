@@ -1,11 +1,11 @@
-fastapi==0.141.1
-starlette==1.6.0
-uvicorn[standard]==0.53.0
-sqlalchemy==2.0.54
+fastapi==0.143.0
+starlette==1.7.0
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.4
 psycopg[binary]==3.3.6
 alembic==1.20.0
 pydantic-settings==2.15.0
-pydantic[email]==2.13.5
+pydantic[email]==2.14.1
 argon2-cffi==25.1.0
 # cryptography: nach pip install erzwingen (presidio-anonymizer pinnt <49, CVE-2026-69247)
 python-multipart==0.0.32
